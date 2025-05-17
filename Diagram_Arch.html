@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Agentic System Orchestration</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #2c3e50; /* Background for the page */
+            overflow: hidden; /* Prevent scrollbars */
+        }
+        svg {
+            width: 90vw;
+            height: 90vh;
+            max-width: 900px; /* Corresponds to viewBox width */
+            max-height: 850px; /* Corresponds to viewBox height */
+        }
+    </style>
+</head>
+<body>
+    <svg viewBox="0 0 900 850" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <linearGradient id="gradDataPacket" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#f1c40f; stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#f39c12; stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="gradUserQuery" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#5dade2; stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#2e86c1; stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="gradSystemPrompt" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#aed6f1; stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#85c1e9; stop-opacity:1" />
+            </linearGradient>
+             <filter id="glowFilter" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="4.5" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+             <filter id="subtleGlowFilter" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="coloredBlurSubtle"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlurSubtle"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+
+            <g id="memoryChipIcon" transform="scale(0.06)">
+                <path fill="#bdc3c7" d="M384,0H128C110.3,0,96,14.3,96,32v96H32c-17.7,0-32,14.3-32,32v224c0,17.7,14.3,32,32,32h96v96 c0,17.7,14.3,32,32,32h256c17.7,0,32-14.3,32-32v-96h96c17.7,0,32-14.3,32-32V160c0-17.7-14.3-32-32-32h-96V32 C416,14.3,401.7,0,384,0z M128,416H96V160h32V416z M384,480H128V32h256V480z M416,384h-32V128h32V384z"/>
+                <rect x="192" y="96" width="128" height="128" fill="#7f8c8d"/>
+                <rect x="160" y="256" width="64" height="64" fill="#95a5a6"/>
+                <rect x="288" y="256" width="64" height="64" fill="#95a5a6"/>
+            </g>
+        </defs>
+
+        <style>
+            .main-label { font-family: 'Segoe UI', Arial, sans-serif; font-size: 20px; fill: #ecf0f1; text-anchor: middle; font-weight: 300;}
+            .sub-label { font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; fill: #bdc3c7; text-anchor: middle; }
+            .system-label { font-family: 'Segoe UI', Arial, sans-serif; font-size: 22px; fill: #abb2b9; text-anchor: middle; font-weight: 400;}
+            .icon-text { font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; font-size: 50px; text-anchor: middle; dominant-baseline: central; }
+            .prompt-icon-text { font-family: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif; font-size: 40px; text-anchor: middle; dominant-baseline: central; }
+            .data-packet-text { font-family: 'Courier New', monospace; font-size: 13px; fill: #2c3e50; text-anchor: middle; dominant-baseline: middle; font-weight: bold;}
+            .prompt-packet-text { font-family: 'Courier New', monospace; font-size: 11px; fill: #1A5276; text-anchor: middle; dominant-baseline: middle; font-weight: bold;}
+            .user-query-text { font-family: 'Segoe UI', sans-serif; font-size: 12px; fill: #fff; text-anchor: middle; dominant-baseline: middle; font-weight:normal;}
+
+            .connector-path-base { stroke: #566f89; stroke-width: 3px; stroke-dasharray: 7, 5; fill: none; }
+            .connector-path-active { stroke: #f39c12; stroke-width: 4px; fill: none;
+                stroke-dasharray: 10, 5; animation: marchingAnts 0.7s linear infinite; }
+            .connector-path-user-active { stroke: #5dade2; stroke-width: 4px; fill: none;
+                stroke-dasharray: 10, 5; animation: marchingAntsUser 0.7s linear infinite; }
+            @keyframes marchingAnts { to { stroke-dashoffset: -15; } }
+            @keyframes marchingAntsUser { to { stroke-dashoffset: -15; } }
+
+            .icon-container-bg { fill-opacity: 0.1; }
+            .user-color { fill: #5dade2;}
+            .chatbot-color { fill: #58d68d;}
+            .agentic-system-bg { fill: #3b5063; fill-opacity: 0.4; stroke: #4a6278; stroke-width:1.5px; stroke-dasharray: 10,5; }
+            .orchestrator-color { fill: #9b59b6; }
+            .agent1-color { fill: #3498db; }
+            .agent2-color { fill: #2ecc71; }
+            .db-oracle-color { fill: #e74c3c; }
+            .db-mongo-color { fill: #16a085; }
+            .system-prompt-color { fill: #aed6f1; }
+            .memory-icon { fill: #bdc3c7; opacity: 0.9;}
+        </style>
+
+        <!-- User & Chatbot (remain outside the Agentic System box) -->
+        <g id="userElement" transform="translate(450, 80)"> <!-- Centered User -->
+            <circle cx="0" cy="0" r="50" class="icon-container-bg user-color"/>
+            <text x="0" y="0" class="icon-text">🧑</text>
+            <text x="0" y="55" class="main-label">User</text>
+        </g>
+        <g id="chatbotElement" transform="translate(450, 230)"> <!-- Centered Chatbot -->
+            <circle cx="0" cy="0" r="60" class="icon-container-bg chatbot-color"/>
+            <path d="M -25 -30 Q -35 -30 -35 -20 L -35 0 Q -35 10 -25 10 L 25 10 Q 35 10 35 0 L 35 -20 Q 35 -30 25 -30 Z M -15 10 L -15 20 L -5 10 Z" fill="#58d68d" opacity="0.3" transform="translate(0, -5) scale(1.3)"/>
+            <text x="0" y="0" class="icon-text">🤖</text>
+            <text x="0" y="65" class="main-label">Chatbot</text>
+             <animate id="chatbot-glow-anim" attributeName="filter"
+                values="none; url(#subtleGlowFilter); none"
+                keyTimes="0; 0.1; 0.166; 1" dur="15s" begin="0s" repeatCount="indefinite" />
+        </g>
+
+        <!-- Agentic System Bounding Box -->
+        <rect x="50" y="320" width="800" height="330" rx="25" ry="25" class="agentic-system-bg"/>
+        <text x="450" y="350" class="system-label">Agentic System</text>
+
+
+        <!-- Orchestrator (Inside Agentic System) -->
+        <g id="orchestratorElement" transform="translate(450, 410)">
+            <circle cx="0" cy="0" r="65" class="icon-container-bg orchestrator-color"/>
+            <text x="0" y="0" class="icon-text">🧠</text>
+            <text x="0" y="75" class="main-label">Orchestrator</text>
+            <use xlink:href="#memoryChipIcon" x="-15" y="30" width="30" height="30" class="memory-icon"/>
+             <animateTransform attributeName="transform" attributeType="XML" type="translate"
+                values="450 410; 450 407; 450 410" dur="2s" begin="orch-glow-anim.begin" repeatCount="indefinite" additive="sum"/>
+             <animate id="orch-glow-anim" attributeName="filter"
+                values="none; url(#subtleGlowFilter); none; url(#subtleGlowFilter); none; url(#subtleGlowFilter); none"
+                keyTimes="0; 0.266; 0.333; 0.6; 0.666; 0.933; 1" dur="15s" begin="0s" repeatCount="indefinite" />
+        </g>
+
+        <!-- System Prompt 1 (Inside Agentic System) -->
+        <g id="systemPrompt1" transform="translate(150, 550)">
+            <circle cx="0" cy="0" r="40" class="icon-container-bg system-prompt-color"/>
+            <text x="0" y="0" class="prompt-icon-text">📖</text>
+            <text x="0" y="45" class="sub-label" font-size="14px">System Prompt</text>
+        </g>
+
+        <!-- Agent 1: OracleSQL (Inside Agentic System) -->
+        <g id="agent1Element" transform="translate(300, 570)">
+            <circle cx="0" cy="0" r="60" class="icon-container-bg agent1-color"/>
+            <text x="0" y="0" class="icon-text">🤖</text>
+            <text x="40" y="85" class="main-label">Agent 1</text>
+            <text x="40" y="105" class="sub-label">OracleSQL</text>
+            <use xlink:href="#memoryChipIcon" x="-13" y="30" width="26" height="26" class="memory-icon"/>
+            <animate id="agent1-glow-anim" attributeName="filter"
+                values="none; url(#glowFilter); none"
+                keyTimes="0; 0.433; 0.5; 1" dur="15s" begin="0s" repeatCount="indefinite" />
+        </g>
+
+        <!-- System Prompt 2 (Inside Agentic System) -->
+         <g id="systemPrompt2" transform="translate(750, 550)">
+            <circle cx="0" cy="0" r="40" class="icon-container-bg system-prompt-color"/>
+            <text x="0" y="0" class="prompt-icon-text">📖</text>
+            <text x="0" y="45" class="sub-label" font-size="14px">System Prompt</text>
+        </g>
+
+        <!-- Agent 2: MongoDB (Inside Agentic System) -->
+        <g id="agent2Element" transform="translate(600, 570)">
+             <circle cx="0" cy="0" r="60" class="icon-container-bg agent2-color"/>
+            <text x="0" y="0" class="icon-text">🤖</text>
+            <text x="40" y="85" class="main-label">Agent 2</text>
+            <text x="40" y="105" class="sub-label">MongoDB</text>
+            <use xlink:href="#memoryChipIcon" x="-13" y="30" width="26" height="26" class="memory-icon"/>
+            <animate id="agent2-glow-anim" attributeName="filter"
+                values="none; url(#glowFilter); none"
+                keyTimes="0; 0.766; 0.833; 1" dur="15s" begin="0s" repeatCount="indefinite" />
+        </g>
+
+        <!-- Databases (Remain outside Agentic System, below it) -->
+        <g id="db1Element" transform="translate(300, 750)">
+            <ellipse cx="0" cy="0" rx="50" ry="18" class="db-oracle-color"/>
+            <rect x="-50" y="0" width="100" height="35" class="db-oracle-color"/>
+            <ellipse cx="0" cy="35" rx="50" ry="18" class="db-oracle-color" stroke="#c0392b" stroke-width="1.5"/>
+            <text x="0" y="70" class="main-label" fill="#fff">OracleDB Catalog</text>
+        </g>
+        <g id="db2Element" transform="translate(600, 750)">
+            <ellipse cx="0" cy="0" rx="50" ry="18" class="db-mongo-color"/>
+            <rect x="-50" y="0" width="100" height="35" class="db-mongo-color"/>
+            <ellipse cx="0" cy="35" rx="50" ry="18" class="db-mongo-color" stroke="#128a71" stroke-width="1.5"/>
+            <text x="0" y="70" class="main-label" fill="#fff">MongoDB Catalog</text>
+        </g>
+
+        <!-- Base Connector Paths (Adjusted for new layout) -->
+        <path id="p-user-chatbot-base" class="connector-path-base" d="M450,120 Q450,170 450,200"/>
+        <path id="p-chatbot-orch-base" class="connector-path-base" d="M450,280 Q450,340 450,380"/>
+        <path id="p-orch-a1-base" class="connector-path-base" d="M420,440 Q370,490 330,545"/>
+        <path id="p-a1-db1-base" class="connector-path-base" d="M300,620 Q300,680 300,730"/>
+        <path id="p-orch-a2-base" class="connector-path-base" d="M480,440 Q530,490 570,545"/>
+        <path id="p-a2-db2-base" class="connector-path-base" d="M600,620 Q600,680 600,730"/>
+        <path id="p-sp1-a1-base" class="connector-path-base" d="M170,550 Q225,555 270,560" stroke-dasharray="3,3"/>
+        <path id="p-sp2-a2-base" class="connector-path-base" d="M730,550 Q675,555 630,560" stroke-dasharray="3,3"/>
+
+
+        <!-- Active Connector Paths -->
+        <use xlink:href="#p-user-chatbot-base" class="connector-path-user-active" visibility="hidden">
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0; 0.001; 0.1; 1" dur="15s" begin="0s" repeatCount="indefinite"/>
+        </use>
+        <use xlink:href="#p-chatbot-orch-base" class="connector-path-active" visibility="hidden">
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0; 0.166; 0.266; 1" dur="15s" begin="0s" repeatCount="indefinite"/>
+        </use>
+        <use xlink:href="#p-orch-a1-base" class="connector-path-active" visibility="hidden">
+             <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0; 0.333; 0.433; 1" dur="15s" begin="0s" repeatCount="indefinite"/>
+        </use>
+         <use xlink:href="#p-a1-db1-base" class="connector-path-active" visibility="hidden">
+             <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0; 0.433; 0.5; 1" dur="15s" begin="0s" repeatCount="indefinite"/>
+        </use>
+        <use xlink:href="#p-orch-a1-base" class="connector-path-active" visibility="hidden">
+             <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0; 0.5; 0.6; 1" dur="15s" begin="0s" repeatCount="indefinite"/>
+        </use>
+        <use xlink:href="#p-orch-a2-base" class="connector-path-active" visibility="hidden">
+             <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0; 0.666; 0.766; 1" dur="15s" begin="0s" repeatCount="indefinite"/>
+        </use>
+         <use xlink:href="#p-a2-db2-base" class="connector-path-active" visibility="hidden">
+             <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0; 0.766; 0.833; 1" dur="15s" begin="0s" repeatCount="indefinite"/>
+        </use>
+        <use xlink:href="#p-orch-a2-base" class="connector-path-active" visibility="hidden">
+             <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0; 0.833; 0.933; 1" dur="15s" begin="0s" repeatCount="indefinite"/>
+        </use>
+
+        <!-- Invisible paths for packet return trips (used by mpath) -->
+        <path id="p-a1-orch-return" class="connector-path-base" d="M330,545 Q370,490 420,440" visibility="hidden"/>
+        <path id="p-a2-orch-return" class="connector-path-base" d="M570,545 Q530,490 480,440" visibility="hidden"/>
+
+        <!-- Animated Data Packets (Order of definition matters for z-index if not using z-index property) -->
+        <!-- System Prompt 1 Packet -->
+        <g id="packet_SP1_A1">
+            <rect x="-20" y="-10" width="45" height="20" rx="3" fill="url(#gradSystemPrompt)"/>
+            <text x="0" y="0" class="prompt-packet-text">SP{...}</text>
+            <animateMotion dur="1.2s" begin="motion_Chatbot_Orch.end + 1s" fill="freeze" restart="whenNotActive"> <mpath xlink:href="#p-sp1-a1-base"/></animateMotion>
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0;0.001;1" dur="1.2s" begin="motion_Chatbot_Orch.end + 1s" fill="freeze" restart="whenNotActive"/>
+        </g>
+        <!-- System Prompt 2 Packet -->
+        <g id="packet_SP2_A2">
+            <rect x="-20" y="-10" width="45" height="20" rx="3" fill="url(#gradSystemPrompt)"/>
+            <text x="0" y="0" class="prompt-packet-text">SP{...}</text>
+            <animateMotion dur="1.2s" begin="motion_A1_O.end + 1s" fill="freeze" restart="whenNotActive"> <mpath xlink:href="#p-sp2-a2-base"/></animateMotion>
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0;0.001;1" dur="1.2s" begin="motion_A1_O.end + 1s" fill="freeze" restart="whenNotActive"/>
+        </g>
+
+        <!-- Main Data Packets -->
+        <g id="packet_User_Chatbot">
+            <rect x="-45" y="-15" width="90" height="30" rx="5" fill="url(#gradUserQuery)"/>
+            <text x="0" y="0" class="user-query-text">User Query?</text>
+            <animateMotion dur="1.5s" begin="0s; motion_A2_O.end + 1s" fill="freeze" restart="whenNotActive"> <mpath xlink:href="#p-user-chatbot-base"/></animateMotion>
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0;0.001;1" dur="1.5s" begin="0s; motion_A2_O.end + 1s" fill="freeze" id="motion_User_Chatbot_vis" restart="whenNotActive"/>
+        </g>
+         <g id="packet_User_Chatbot_text_ref">
+             <animateMotion dur="1.5s" begin="motion_User_Chatbot_vis.begin" fill="freeze" id="motion_User_Chatbot" restart="whenNotActive"> <mpath xlink:href="#p-user-chatbot-base"/></animateMotion>
+        </g>
+
+        <g id="packet_Chatbot_Orch">
+            <rect x="-30" y="-15" width="60" height="30" rx="5" fill="url(#gradDataPacket)"/>
+            <text x="0" y="0" class="data-packet-text">{req}</text>
+            <animateMotion dur="1.5s" begin="motion_User_Chatbot.end + 1s" fill="freeze" restart="whenNotActive"> <mpath xlink:href="#p-chatbot-orch-base"/></animateMotion>
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0;0.001;1" dur="1.5s" begin="motion_User_Chatbot.end + 1s" fill="freeze" id="motion_Chatbot_Orch_vis" restart="whenNotActive"/>
+        </g>
+         <g id="packet_Chatbot_Orch_text_ref">
+            <animateMotion dur="1.5s" begin="motion_Chatbot_Orch_vis.begin" fill="freeze" id="motion_Chatbot_Orch" restart="whenNotActive"> <mpath xlink:href="#p-chatbot-orch-base"/></animateMotion>
+        </g>
+
+        <g id="packet_O_A1">
+            <rect x="-25" y="-15" width="55" height="30" rx="5" fill="url(#gradDataPacket)"/>
+            <text x="0" y="0" class="data-packet-text">{data}</text>
+            <animateMotion dur="1.5s" begin="motion_Chatbot_Orch.end + 1s" fill="freeze" restart="whenNotActive"> <mpath xlink:href="#p-orch-a1-base"/></animateMotion>
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0;0.001;1" dur="1.5s" begin="motion_Chatbot_Orch.end + 1s" fill="freeze" id="motion_O_A1_vis" restart="whenNotActive"/>
+        </g>
+         <g id="packet_O_A1_text_ref">
+            <animateMotion dur="1.5s" begin="motion_O_A1_vis.begin" fill="freeze" id="motion_O_A1" restart="whenNotActive"> <mpath xlink:href="#p-orch-a1-base"/></animateMotion>
+        </g>
+
+        <g id="packet_A1_O">
+            <rect x="-35" y="-15" width="75" height="30" rx="5" fill="url(#gradDataPacket)"/>
+            <text x="0" y="0" class="data-packet-text">SQL{...}</text>
+            <animateMotion dur="1.5s" begin="motion_O_A1.end + 1s" fill="freeze" restart="whenNotActive"> <mpath xlink:href="#p-a1-orch-return"/></animateMotion>
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0;0.001;1" dur="1.5s" begin="motion_O_A1.end + 1s" fill="freeze" id="motion_A1_O_vis" restart="whenNotActive"/>
+        </g>
+        <g id="packet_A1_O_text_ref">
+            <animateMotion dur="1.5s" begin="motion_A1_O_vis.begin" fill="freeze" id="motion_A1_O" restart="whenNotActive"> <mpath xlink:href="#p-a1-orch-return"/></animateMotion>
+        </g>
+
+        <g id="packet_O_A2">
+            <rect x="-25" y="-15" width="55" height="30" rx="5" fill="url(#gradDataPacket)"/>
+            <text x="0" y="0" class="data-packet-text">{data}</text>
+            <animateMotion dur="1.5s" begin="motion_A1_O.end + 1s" fill="freeze" restart="whenNotActive"> <mpath xlink:href="#p-orch-a2-base"/></animateMotion>
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0;0.001;1" dur="1.5s" begin="motion_A1_O.end + 1s" fill="freeze" id="motion_O_A2_vis" restart="whenNotActive"/>
+        </g>
+        <g id="packet_O_A2_text_ref">
+             <animateMotion dur="1.5s" begin="motion_O_A2_vis.begin" fill="freeze" id="motion_O_A2" restart="whenNotActive"> <mpath xlink:href="#p-orch-a2-base"/></animateMotion>
+        </g>
+
+        <g id="packet_A2_O">
+            <rect x="-40" y="-15" width="85" height="30" rx="5" fill="url(#gradDataPacket)"/>
+            <text x="0" y="0" class="data-packet-text">Mongo{...}</text>
+            <animateMotion dur="1.5s" begin="motion_O_A2.end + 1s" fill="freeze" restart="whenNotActive"> <mpath xlink:href="#p-a2-orch-return"/></animateMotion>
+            <animate attributeName="visibility" values="hidden;visible;hidden" keyTimes="0;0.001;1" dur="1.5s" begin="motion_O_A2.end + 1s" fill="freeze" id="motion_A2_O_vis" restart="whenNotActive"/>
+        </g>
+        <g id="packet_A2_O_text_ref">
+            <animateMotion dur="1.5s" begin="motion_A2_O_vis.begin" fill="freeze" id="motion_A2_O" restart="whenNotActive"> <mpath xlink:href="#p-a2-orch-return"/></animateMotion>
+        </g>
+    </svg>
+</body>
+</html>
