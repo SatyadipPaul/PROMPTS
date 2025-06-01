@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete GSAP Animation Effects Demo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/MotionPathPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/TextPlugin.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/EasePack.min.js"></script>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; padding: 20px;
+        }
+        .container {
+            max-width: 1600px; margin: 0 auto; background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px; padding: 30px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center; color: #333; margin-bottom: 15px; font-size: 2.5rem; font-weight: 700;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .cheatsheet-link { text-align: center; margin-bottom: 30px; font-size: 1rem; }
+        .cheatsheet-link a { color: #667eea; text-decoration: none; font-weight: 600; transition: color 0.3s ease; }
+        .cheatsheet-link a:hover { color: #764ba2; text-decoration: underline; }
+
+        .demo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .controls-panel {
+            background: #f8f9fa; padding: 25px; border-radius: 15px;
+            border: 2px solid #e9ecef; max-height: 650px; overflow-y: auto;
+        }
+        .animation-display {
+            background: #1a1a1a; padding: 25px; border-radius: 15px; min-height: 650px;
+            display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        .scroller-container {
+            width: 100%; height: 100%; overflow-y: auto;
+            border: 1px dashed #444; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+        }
+        .scroll-content-spacer { height: 250px; width:100%; text-align:center; color:#777; padding-top:50px; }
+        .scroll-triggered-box {
+            width: 120px; height: 120px; background: #00f2fe; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; color: #1a1a1a; font-weight: bold;
+            margin: 50px 0 300px 0;
+        }
+
+        .controls-group { margin-bottom: 25px; }
+        .controls-group h3 {
+            color: #495057; margin-bottom: 15px; font-size: 1.1rem; font-weight: 600;
+            padding: 8px 12px; background: linear-gradient(90deg, #667eea20, #764ba220);
+            border-radius: 8px; border-left: 4px solid #667eea;
+        }
+        .animation-buttons { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 15px; }
+        .btn {
+            padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 12px; font-weight: 600; transition: all 0.3s ease;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn-primary { background: linear-gradient(45deg, #4facfe, #00f2fe); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(79, 172, 254, 0.4); }
+        .btn-secondary { background: linear-gradient(45deg, #667eea, #764ba2); color: white; }
+        .btn-secondary:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4); }
+        .btn-success { background: linear-gradient(45deg, #11998e, #38ef7d); color: white; }
+        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(17, 153, 142, 0.4); }
+        .btn-warning { background: linear-gradient(45deg, #f093fb, #f5576c); color: white; }
+        .btn-warning:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(240, 147, 251, 0.4); }
+        .btn-info { background: linear-gradient(45deg, #4481eb, #04befe); color: white; }
+        .btn-info:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(68, 129, 235, 0.4); }
+        .btn-dark { background: linear-gradient(45deg, #2c3e50, #34495e); color: white; }
+        .btn-dark:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(44, 62, 80, 0.4); }
+        .btn-danger { background: linear-gradient(45deg, #d6336c, #fa5252); color: white; }
+        .btn-danger:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(214, 51, 108, 0.4); }
+        .btn-calm { background: linear-gradient(45deg, #5f72bd, #967bb6 ); color: white; }
+        .btn-calm:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(95, 114, 189, 0.4); }
+
+        .animated-element {
+            width: 80px; height: 80px; background: linear-gradient(45deg, #ff6b6b, #feca57);
+            border-radius: 10px; position: relative; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 12px; text-align: center;
+        }
+        .timeline-demo-container { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+        .timeline-element {
+            width: 50px; height: 50px; border-radius: 50%; position: relative;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; font-size: 10px;
+        }
+        .timeline-element:nth-child(1) { background: #ff6b6b; } .timeline-element:nth-child(2) { background: #4ecdc4; }
+        .timeline-element:nth-child(3) { background: #45b7d1; } .timeline-element:nth-child(4) { background: #96ceb4; }
+        .timeline-element:nth-child(5) { background: #feca57; } .timeline-element:nth-child(6) { background: #ff9ff3; }
+
+        .text-demo { color: #fff; font-size: 2.5rem; font-weight: bold; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); width: 90%; }
+        .text-char { display: inline-block; position: relative; }
+        .morphing-demo { width: 100px; height: 100px; background: #ff6b6b; border-radius: 50%; }
+        .particles-container { position: relative; width: 300px; height: 300px; }
+        .particle { width: 8px; height: 8px; background: #4ecdc4; border-radius: 50%; position: absolute; }
+        .wave-demo-container { position: relative; width: 300px; height: 100px; }
+        .wave-dot { width: 20px; height: 20px; background: linear-gradient(90deg, #4facfe, #00f2fe); border-radius: 50%; position: absolute; top: 40px; }
+        .progress-bar-container { width: 300px; }
+        .progress-bar { width: 100%; height: 12px; background: #333; border-radius: 6px; overflow: hidden; }
+        .progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #4facfe, #00f2fe); border-radius: 6px; }
+        .flip-card-container { perspective: 1000px; } .flip-card { width: 150px; height: 100px; }
+        .flip-card-inner { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; }
+        .flip-card-front, .flip-card-back {
+            width: 100%; height: 100%; position: absolute; backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px; font-weight: bold; color: white;
+        }
+        .flip-card-front { background: linear-gradient(45deg, #667eea, #764ba2); }
+        .flip-card-back { background: linear-gradient(45deg, #f093fb, #f5576c); transform: rotateY(180deg); }
+        .svg-demo { width: 300px; height: 200px; }
+        .path-mover { width: 30px; height: 30px; background: #feca57; border-radius: 50%; }
+        .liquid-demo { width: 100px; height: 100px; background: linear-gradient(45deg, #4facfe, #00f2fe); border-radius: 45% 55% 60% 40% / 40% 45% 55% 60% ; position: relative; }
+        .accordion-container { width: 300px; } .accordion-item { background: #3e4a5a; margin-bottom: 5px; border-radius: 5px; overflow: hidden; }
+        .accordion-header { padding: 10px; color: white; cursor: pointer; background: #4a5568; }
+        .accordion-content { padding: 10px; color: #ccc; max-height: 0; overflow: hidden; }
+        .clock-container { width: 150px; height: 150px; border: 4px solid white; border-radius: 50%; position: relative; }
+        .clock-hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; background: white; border-radius: 2px 2px 0 0; }
+        .hour-hand { width: 4px; height: 40px; } .minute-hand { width: 3px; height: 60px; } .second-hand { width: 2px; height: 70px; background: #ff6b6b; }
+        .clock-center { width: 10px; height: 10px; background: white; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
+
+        .code-section { background: #2d3748; color: #e2e8f0; padding: 20px; border-radius: 15px; margin-top: 20px; font-family: 'Courier New', monospace; font-size: 13px; line-height: 1.6; max-height: 350px; overflow-y: auto; display: none; }
+        .code-section.active { display: block; }
+        .code-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #4a5568;}
+        .copy-btn { background: #4299e1; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        .copy-btn:hover { background: #3182ce; }
+        pre { margin: 0; white-space: pre-wrap; word-wrap: break-word; }
+        .keyword { color: #ff79c6; } .string { color: #f1fa8c; } .number { color: #bd93f9; }
+        .comment { color: #6272a4; } .variable { color: #8be9fd; } .property { color: #66d9ef; } .function { color: #50fa7b; }
+
+        @media (max-width: 1024px) {
+            .demo-grid { grid-template-columns: 1fr; }
+            .animation-buttons { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+            h1 { font-size: 2rem; } .controls-panel { max-height: none; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🎬 Complete GSAP Animation Effects Demo</h1>
+    <div class="cheatsheet-link">
+        <a href="https://gsap.com/cheatsheet/" target="_blank" rel="noopener noreferrer">🔗 GSAP Cheatsheet</a>
+        | <a href="https://gsap.com/docs/v3" target="_blank" rel="noopener noreferrer">📖 GSAP Docs V3</a>
+        | <a href="https://gsap.com/docs/v3/Eases" target="_blank" rel="noopener noreferrer">🌀 GSAP Eases</a>
+    </div>
+
+    <div class="demo-grid">
+        <div class="controls-panel">
+            <!-- Basic Transforms -->
+            <div class="controls-group"><h3>🎯 Basic Transforms</h3><div class="animation-buttons">
+                <button class="btn btn-primary" onclick="fadeAnimation()">Fade</button> <button class="btn btn-primary" onclick="slideAnimation()">Slide</button>
+                <button class="btn btn-primary" onclick="scaleAnimation()">Scale</button> <button class="btn btn-primary" onclick="rotateAnimation()">Rotate</button>
+                <button class="btn btn-primary" onclick="skewAnimation()">Skew</button> <button class="btn btn-primary" onclick="flipAnimation()">Flip</button>
+            </div></div>
+            <!-- Motion & Physics -->
+            <div class="controls-group"><h3>🌊 Motion & Physics</h3><div class="animation-buttons">
+                <button class="btn btn-secondary" onclick="bounceAnimation()">Bounce</button> <button class="btn btn-secondary" onclick="elasticAnimation()">Elastic</button>
+                <button class="btn btn-secondary" onclick="swingAnimation()">Swing</button> <button class="btn btn-secondary" onclick="wobbleAnimation()">Wobble</button>
+                <button class="btn btn-secondary" onclick="pulseAnimation()">Pulse</button> <button class="btn btn-secondary" onclick="shakeAnimation()">Shake</button>
+            </div></div>
+            <!-- Visual Effects -->
+            <div class="controls-group"><h3>🎨 Visual Effects</h3><div class="animation-buttons">
+                <button class="btn btn-success" onclick="morphAnimation()">Morph</button> <button class="btn btn-success" onclick="glowAnimation()">Glow</button>
+                <button class="btn btn-success" onclick="blurAnimation()">Blur</button> <button class="btn btn-success" onclick="colorAnimation()">Color</button>
+                <button class="btn btn-success" onclick="gradientAnimation()">Gradient</button> <button class="btn btn-success" onclick="shadowAnimation()">Shadow</button>
+            </div></div>
+            <!-- Path & Motion -->
+            <div class="controls-group"><h3>🔄 Path & Motion</h3><div class="animation-buttons">
+                <button class="btn btn-warning" onclick="pathAnimation()">Path</button> <button class="btn btn-warning" onclick="orbitalAnimation()">Orbital</button>
+                <button class="btn btn-warning" onclick="spiralAnimation()">Spiral</button> <button class="btn btn-warning" onclick="figureEightAnimation()">Figure 8</button>
+                <button class="btn btn-warning" onclick="waveMotionAnimation()">Wave Motion</button> <button class="btn btn-warning" onclick="magneticAnimation()">Magnetic</button>
+            </div></div>
+            <!-- Text Effects -->
+            <div class="controls-group"><h3>📝 Text Effects</h3><div class="animation-buttons">
+                <button class="btn btn-info" onclick="textRevealAnimation()">Text Reveal</button> <button class="btn btn-info" onclick="typewriterAnimation()">Typewriter</button>
+                <button class="btn btn-info" onclick="textWaveAnimation()">Text Wave</button> <button class="btn btn-info" onclick="textGlitchAnimation()">Glitch</button>
+                <button class="btn btn-info" onclick="textSplitAnimation()">Split Text</button> <button class="btn btn-info" onclick="textMorphAnimation()">Text Morph</button>
+            </div></div>
+            <!-- 3D & Advanced -->
+            <div class="controls-group"><h3>🎭 3D & Advanced</h3><div class="animation-buttons">
+                <button class="btn btn-dark" onclick="flipCardAnimation()">Card Flip</button> <button class="btn btn-dark" onclick="cubeAnimation()">3D Cube</button>
+                <button class="btn btn-dark" onclick="perspectiveAnimation()">Perspective</button> <button class="btn btn-dark" onclick="liquidAnimation()">Liquid</button>
+                <button class="btn btn-dark" onclick="particleAnimation()">Particles</button> <button class="btn btn-dark" onclick="magneticHoverAnimation()">Magnetic Hover</button>
+            </div></div>
+            <!-- Timeline & Sequence -->
+            <div class="controls-group"><h3>⚡ Timeline & Sequence</h3><div class="animation-buttons">
+                <button class="btn btn-primary" onclick="timelineAnimation()">Timeline</button> <button class="btn btn-primary" onclick="staggerAnimation()">Stagger</button>
+                <button class="btn btn-primary" onclick="sequenceAnimation()">Sequence</button> <button class="btn btn-primary" onclick="progressAnimation()">Progress</button>
+                <button class="btn btn-primary" onclick="loaderAnimation()">Loader</button> <button class="btn btn-primary" onclick="accordionAnimation()">Accordion</button>
+            </div></div>
+            <!-- Advanced Eases, Utilities & Scroll -->
+            <div class="controls-group"><h3>🛠️ Eases, Utilities & Scroll</h3><div class="animation-buttons">
+                <button class="btn btn-danger" onclick="keyframesArrayAnimation()">Keyframes Array</button>
+                <button class="btn btn-danger" onclick="wrapUtilityAnimation()">Wrap Utility</button>
+                <button class="btn btn-danger" onclick="delayedCallAnimation()">Delayed Call</button>
+                <button class="btn btn-danger" onclick="stepsEaseAnimation()">Steps() Ease</button>
+                <button class="btn btn-calm" onclick="roughEaseAnimation()">Rough Ease</button>
+                <button class="btn btn-calm" onclick="slowMoEaseAnimation()">SlowMo Ease</button>
+                <button class="btn btn-calm" onclick="expoInOutEaseAnimation()">Expo In/Out</button>
+                <button class="btn btn-calm" onclick="customEaseInfoAnimation()">Custom Ease Info</button>
+                <button class="btn btn-danger" onclick="scrollTriggerBasicAnimation()">ScrollTrigger</button>
+            </div></div>
+            <!-- Special Effects -->
+            <div class="controls-group"><h3>🎪 Special Effects</h3><div class="animation-buttons">
+                <button class="btn btn-warning" onclick="explosionAnimation()">Explosion</button> <button class="btn btn-warning" onclick="fireworksAnimation()">Fireworks</button>
+                <button class="btn btn-warning" onclick="rippleAnimation()">Ripple</button> <button class="btn btn-warning" onclick="matrixAnimation()">Matrix</button>
+                <button class="btn btn-warning" onclick="clockAnimation()">Clock</button> <button class="btn btn-warning" onclick="randomAnimation()">Random</button>
+            </div></div>
+
+            <div class="controls-group"><button class="btn btn-dark" onclick="toggleCode()" style="width: 100%;"><span id="codeToggleText">Show Code</span></button></div>
+        </div>
+
+        <div class="animation-display" id="animationDisplay">
+            <div class="animated-element" id="animatedElement"></div>
+        </div>
+    </div>
+
+    <div class="code-section" id="codeSection"><div class="code-header"><h4>Code Example</h4><button class="copy-btn" onclick="copyCode()">Copy Code</button></div><pre id="codeContent"></pre></div>
+</div>
+
+<script>
+    gsap.registerPlugin(MotionPathPlugin, TextPlugin, ScrollTrigger, RoughEase, SlowMo); // Corrected registration
+
+    let currentAnimation = null;
+    let codeVisible = false;
+
+    function updateCodeDisplay(animationName) {
+        const codeContent = document.getElementById('codeContent');
+        codeContent.innerHTML = codeExamples[animationName] || `<span class="comment">// Code for ${animationName} not available.</span>`;
+    }
+
+    function resetAnimationArea(config = {}) {
+        const {
+            elementType = 'div', elementId = 'animatedElement', elementClass = 'animated-element',
+            innerHTMLContent = '', numElements = 0, elementBaseClass = '',
+            containerClass = null, htmlStructure = null, makeDisplayScrollable = false
+        } = config;
+
+        ScrollTrigger.getAll().forEach(st => st.kill(true)); // Kill all ScrollTriggers and remove markers
+
+        if (currentAnimation) {
+            if (currentAnimation.type === 'ticker' && typeof currentAnimation.funcRef === 'function') gsap.ticker.remove(currentAnimation.funcRef);
+            else if (currentAnimation.type === 'eventListeners' && typeof currentAnimation.cleanup === 'function') currentAnimation.cleanup();
+            else if (typeof currentAnimation.kill === 'function') currentAnimation.kill();
+            else if (Array.isArray(currentAnimation)) currentAnimation.forEach(anim => anim && typeof anim.kill === 'function' && anim.kill());
+        }
+        currentAnimation = null;
+
+        const display = document.getElementById('animationDisplay');
+        display.innerHTML = '';
+        display.style.overflowY = makeDisplayScrollable ? 'auto' : 'hidden';
+        let createdElements = [];
+
+        if (htmlStructure) {
+            display.innerHTML = htmlStructure;
+            createdElements = display.firstChild;
+        } else if (numElements > 0) {
+            let parent = display;
+            if (containerClass) {
+                const container = document.createElement('div'); container.className = containerClass;
+                display.appendChild(container); parent = container;
+            }
+            for (let i = 0; i < numElements; i++) {
+                const el = document.createElement(elementType); el.className = elementBaseClass;
+                el.innerHTML = (typeof innerHTMLContent === 'function') ? innerHTMLContent(i) : innerHTMLContent;
+                parent.appendChild(el); createdElements.push(el);
+            }
+        } else if (elementType) {
+            const newElement = document.createElement(elementType);
+            if (elementId) newElement.id = elementId; if (elementClass) newElement.className = elementClass;
+            newElement.innerHTML = innerHTMLContent; display.appendChild(newElement); createdElements = newElement;
+        }
+        return createdElements;
+    }
+
+    // --- ALL Animation Functions Restored ---
+
+    // Basic Transforms
+    function fadeAnimation() { resetAnimationArea(); currentAnimation = gsap.fromTo("#animatedElement", { opacity: 1 }, { opacity: 0, duration: 1, ease: "power2.inOut", yoyo: true, repeat: 1 }); updateCodeDisplay('fade'); }
+    function slideAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { x: 200, duration: 1.5, ease: "back.inOut(1.7)", yoyo: true, repeat: 1 }); updateCodeDisplay('slide'); }
+    function scaleAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { scale: 1.8, duration: 1, ease: "elastic.out(1, 0.3)", yoyo: true, repeat: 1 }); updateCodeDisplay('scale'); }
+    function rotateAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { rotation: 360, duration: 2, ease: "power2.inOut", yoyo: true, repeat: 1 }); updateCodeDisplay('rotate'); }
+    function skewAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { skewX: 30, skewY: 15, duration: 1, ease: "power2.inOut", yoyo: true, repeat: 1 }); updateCodeDisplay('skew'); }
+    function flipAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { rotationY: 180, duration: 1, ease: "power2.inOut", yoyo: true, repeat: 1 }); updateCodeDisplay('flip'); }
+
+    // Motion & Physics
+    function bounceAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { y: -120, duration: 0.6, ease: "bounce.out", yoyo: true, repeat: 3 }); updateCodeDisplay('bounce'); }
+    function elasticAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { x: 100, scale: 1.3, rotation: 25, duration: 2, ease: "elastic.out(1, 0.3)", yoyo: true, repeat: 1 }); updateCodeDisplay('elastic'); }
+    function swingAnimation() { resetAnimationArea(); gsap.set("#animatedElement", { transformOrigin: "top center" }); currentAnimation = gsap.to("#animatedElement", { rotation: 15, duration: 0.6, ease: "power2.inOut", yoyo: true, repeat: 5 }); updateCodeDisplay('swing'); }
+    function wobbleAnimation() { resetAnimationArea(); const tl = gsap.timeline({ repeat: 3, yoyo: true }); tl.to("#animatedElement", { duration: 0.1, x: "-=10", rotation: "-=5" }).to("#animatedElement", { duration: 0.1, x: "+=20", rotation: "+=10" }).to("#animatedElement", { duration: 0.1, x: "-=10", rotation: "-=5" }); currentAnimation = tl; updateCodeDisplay('wobble'); }
+    function pulseAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { scale: 1.2, duration: 0.5, ease: "power2.inOut", yoyo: true, repeat: 5 }); updateCodeDisplay('pulse'); }
+    function shakeAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { x: "+=10", duration: 0.05, ease: "none", yoyo: true, repeat: 15, clearProps: "x" }); updateCodeDisplay('shake'); }
+
+    // Visual Effects
+    function morphAnimation() { resetAnimationArea({ elementClass: 'morphing-demo', elementId: 'morphElement' }); currentAnimation = gsap.to("#morphElement", { borderRadius: "20% 80% 30% 70% / 70% 30% 80% 20%", scale: 1.4, rotation: 45, backgroundColor: "#4ecdc4", duration: 1.5, ease: "power2.inOut", yoyo: true, repeat: 1 }); updateCodeDisplay('morph'); }
+    function glowAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { boxShadow: "0 0 25px 10px #feca57", duration: 1, ease: "power2.inOut", yoyo: true, repeat: 1 }); updateCodeDisplay('glow'); }
+    function blurAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { filter: "blur(8px)", duration: 1, ease: "power2.inOut", yoyo: true, repeat: 1 }); updateCodeDisplay('blur'); }
+    function colorAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { backgroundColor: "#4facfe", duration: 1, ease: "none", yoyo: true, repeat: 1 }); updateCodeDisplay('color'); }
+    function gradientAnimation() { resetAnimationArea(); gsap.set("#animatedElement", { background: "linear-gradient(45deg, #ff6b6b, #feca57)" }); currentAnimation = gsap.to("#animatedElement", { background: "linear-gradient(45deg, #4facfe, #00f2fe)", duration: 1.5, ease: "none", yoyo: true, repeat: 1 }); updateCodeDisplay('gradient'); }
+    function shadowAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { boxShadow: "15px 15px 30px rgba(0,0,0,0.5)", duration: 1, ease: "power2.inOut", yoyo: true, repeat: 1 }); updateCodeDisplay('shadow'); }
+
+    // Path & Motion
+    function pathAnimation() { const display = document.getElementById('animationDisplay'); display.innerHTML = `<svg class="svg-demo" viewBox="0 0 300 150"><path id="motionPath" fill="none" stroke="#555" d="M10,75 Q50,10 100,75 T190,75 Q230,140 290,75"/></svg><div id="pathMover" class="path-mover"></div>`; gsap.set("#pathMover", { position: 'absolute', top: 0, left: 0 }); currentAnimation = gsap.to("#pathMover", { motionPath: { path: "#motionPath", align: "#motionPath", alignOrigin: [0.5, 0.5], autoRotate: true }, duration: 4, ease: "power1.inOut", repeat: -1, yoyo: true }); updateCodeDisplay('path'); }
+    function orbitalAnimation() { const display = document.getElementById('animationDisplay'); display.innerHTML = `<div id="centerPoint" style="width:20px; height:20px; background:#fff; border-radius:50%; position:absolute;"></div><div id="orbiter" class="animated-element" style="position:absolute;"></div>`; const center = document.getElementById('centerPoint'); const orbiter = document.getElementById('orbiter'); gsap.set(center, { x: display.offsetWidth / 2 - 10, y: display.offsetHeight / 2 - 10 }); gsap.set(orbiter, { x: display.offsetWidth / 2 - 40, y: display.offsetHeight / 2 - 40 - 100 }); currentAnimation = gsap.to("#orbiter", { rotation: 360, transformOrigin: "50px 140px", duration: 4, ease: "none", repeat: -1 }); updateCodeDisplay('orbital'); }
+    function spiralAnimation() { document.getElementById("animationDisplay").innerHTML = '<svg class="svg-demo" viewBox="-50 -50 300 300"><path id="spiralPath" fill="none" stroke="#555" d="M100,100 m-75,0 a75,75 0 1,0 150,0 a75,75 0 1,0 -150,0 m15,-15 a60,60 0 1,0 120,0 a60,60 0 1,0 -120,0 m15,-15 a45,45 0 1,0 90,0 a45,45 0 1,0 -90,0 m15,-15 a30,30 0 1,0 60,0 a30,30 0 1,0 -60,0 m15,-15 a15,15 0 1,0 30,0 a15,15 0 1,0 -30,0 "/></svg><div id="pathMover" class="path-mover"></div>'; gsap.set("#pathMover", { position: 'absolute', top: 0, left: 0 }); currentAnimation = gsap.to("#pathMover", { motionPath: { path: "#spiralPath", align: "#spiralPath", alignOrigin: [0.5, 0.5], autoRotate: true }, duration: 8, ease: "none", repeat: -1 }); updateCodeDisplay('spiral'); }
+    function figureEightAnimation() { document.getElementById("animationDisplay").innerHTML = '<svg class="svg-demo" viewBox="0 0 300 150"><path id="figureEightPath" fill="none" stroke="#555" d="M50,75 C50,25 100,25 100,75 C100,125 150,125 150,75 C150,25 200,25 200,75 C200,125 250,125 250,75"/></svg><div id="pathMover" class="path-mover"></div>'; gsap.set("#pathMover", { position: 'absolute', top: 0, left: 0 }); currentAnimation = gsap.to("#pathMover", { motionPath: { path: "#figureEightPath", align: "#figureEightPath", alignOrigin: [0.5, 0.5], autoRotate: true }, duration: 5, ease: "power1.inOut", repeat: -1, yoyo: true }); updateCodeDisplay('figureEight'); }
+    function waveMotionAnimation() { const elements = resetAnimationArea({ elementType: 'div', numElements: 10, elementBaseClass: 'wave-dot', containerClass: 'wave-demo-container' }); currentAnimation = gsap.to(elements, { y: (i) => (i % 2 === 0 ? -20 : 20), x: (i) => i * 30, duration: 1, ease: "sine.inOut", stagger: { each: 0.1, from: "center", yoyo: true, repeat: -1 }, yoyo: true, repeat: -1 }); updateCodeDisplay('waveMotion'); }
+    function magneticAnimation() { const el = resetAnimationArea(); currentAnimation = gsap.to(el, { x: 0, y: 0, duration: 1.5, ease: "elastic.out(1, 0.5)", onStart: () => gsap.set(el, { x: 100, y: 50 }) }); updateCodeDisplay('magnetic'); }
+
+    // Text Effects
+    function textRevealAnimation() { const el = resetAnimationArea({ elementType: 'div', elementId: 'textDemoElement', elementClass: 'text-demo', innerHTMLContent: 'Revealing Text!' }); currentAnimation = gsap.from(el, { opacity: 0, y: 20, duration: 1, ease: "power2.out" }); updateCodeDisplay('textReveal'); }
+    function typewriterAnimation() { const el = resetAnimationArea({ elementType: 'div', elementId: 'textDemoElement', elementClass: 'text-demo' }); currentAnimation = gsap.to(el, { duration: 2, text: "This is a typewriter effect...", ease: "none" }); updateCodeDisplay('typewriter'); }
+    function textWaveAnimation() { const text = "Wavy Text Animation"; const chars = text.split("").map(char => `<span class="text-char">${char === ' ' ? ' ' : char}</span>`).join(""); resetAnimationArea({ elementType: 'div', elementId: 'textDemoElement', elementClass: 'text-demo', innerHTMLContent: chars }); currentAnimation = gsap.to(".text-char", { y: -15, duration: 0.5, ease: "sine.inOut", stagger: { each: 0.07, from: "start", yoyo: true, repeat: -1 }, yoyo: true, repeat: -1 }); updateCodeDisplay('textWave'); }
+    function textGlitchAnimation() { const el = resetAnimationArea({ elementType: 'div', elementId: 'textDemoElement', elementClass: 'text-demo', innerHTMLContent: 'GLITCH' }); const tl = gsap.timeline({ repeat: -1, repeatDelay: 1 }); const originalText = el.innerText; const glitchChars = "!@#$%^&*()_+"; function randomChar() { return glitchChars[Math.floor(Math.random() * glitchChars.length)]; } function randomGlitchText(length) { let str = ""; for (let i = 0; i < length; i++) str += randomChar(); return str; } for (let i = 0; i < 5; i++) { tl.to(el, { duration: 0.05, onStart: () => el.innerText = randomGlitchText(originalText.length), onComplete: () => el.innerText = originalText }, Math.random() * 0.5); tl.to(el, { x: gsap.utils.random(-5, 5), y: gsap.utils.random(-3, 3), opacity: gsap.utils.random(0.7, 1), duration: 0.05, yoyo: true, repeat: 1 }, "<"); } tl.to(el, { onComplete: () => el.innerText = originalText }, ">"); currentAnimation = tl; updateCodeDisplay('textGlitch'); }
+    function textSplitAnimation() { const text = "Split & Animate"; const chars = text.split("").map(char => `<span class="text-char">${char === ' ' ? ' ' : char}</span>`).join(""); resetAnimationArea({ elementType: 'div', elementId: 'textDemoElement', elementClass: 'text-demo', innerHTMLContent: chars }); currentAnimation = gsap.from(".text-char", { y: 50, opacity: 0, rotationX: -90, duration: 0.8, ease: "back.out(1.7)", stagger: 0.1 }); updateCodeDisplay('textSplit'); }
+    function textMorphAnimation() { const el = resetAnimationArea({ elementType: 'div', elementId: 'textDemoElement', elementClass: 'text-demo' }); const tl = gsap.timeline({ repeat: -1, yoyo: true, repeatDelay: 1 }); tl.to(el, { duration: 2, text: "Morphing Text", ease: "none" }).to(el, { duration: 2, text: "To Something New", ease: "none" }, "+=1"); currentAnimation = tl; updateCodeDisplay('textMorph'); }
+
+    // 3D & Advanced
+    function flipCardAnimation() { const cardHTML = `<div class="flip-card"><div class="flip-card-inner" id="flipCardInner"><div class="flip-card-front">Front</div><div class="flip-card-back">Back</div></div></div>`; resetAnimationArea({ htmlStructure: cardHTML, containerClass: 'flip-card-container' }); currentAnimation = gsap.to("#flipCardInner", { rotationY: "+=180", duration: 1, ease: "power2.inOut" }); updateCodeDisplay('flipCard'); }
+    function cubeAnimation() { const el = resetAnimationArea(); gsap.set(el, { transformPerspective: 500 }); currentAnimation = gsap.to(el, { rotationX: 360, rotationY: 360, duration: 3, ease: "power1.inOut", repeat: -1, yoyo: true }); updateCodeDisplay('cube'); }
+    function perspectiveAnimation() { const el = resetAnimationArea(); gsap.set(el, { transformPerspective: 800, transformStyle: "preserve-3d" }); currentAnimation = gsap.timeline({ yoyo: true, repeat: -1 }).to(el, { rotationX: 45, rotationY: -30, duration: 2, ease: "sine.inOut" }).to(el, { rotationX: -30, rotationY: 45, duration: 2, ease: "sine.inOut" }); updateCodeDisplay('perspective'); }
+    function liquidAnimation() { const el = resetAnimationArea({ elementClass: 'liquid-demo', elementId: 'liquidElement' }); currentAnimation = gsap.to(el, { scaleX: 1.2, scaleY: 0.8, borderRadius: "60% 40% 30% 70% / 50% 60% 40% 50%", duration: 1, ease: "elastic.out(1, 0.4)", yoyo: true, repeat: -1 }); updateCodeDisplay('liquid'); }
+    function particleAnimation() { const particles = resetAnimationArea({ elementType: 'div', numElements: 30, elementBaseClass: 'particle', containerClass: 'particles-container' }); const container = document.querySelector('.particles-container'); const w = container.offsetWidth, h = container.offsetHeight; particles.forEach(p => gsap.set(p, { x: w / 2, y: h / 2 })); currentAnimation = gsap.to(particles, { x: () => gsap.utils.random(0, w), y: () => gsap.utils.random(0, h), scale: () => gsap.utils.random(0.5, 1.5), opacity: () => gsap.utils.random(0.3, 1), duration: 2, stagger: 0.02, ease: "power2.out", yoyo: true, repeat: -1 }); updateCodeDisplay('particle'); }
+    function magneticHoverAnimation() { const el = resetAnimationArea({ innerHTMLContent: 'Hover Me', elementId: 'magneticHoverEl' }); const xTo = gsap.quickTo(el, "x", { duration: 0.4, ease: "power2.out" }); const yTo = gsap.quickTo(el, "y", { duration: 0.4, ease: "power2.out" }); function mouseMoveHandler(e) { const rect = el.getBoundingClientRect(); const relX = e.clientX - rect.left - rect.width / 2; const relY = e.clientY - rect.top - rect.height / 2; xTo(relX * 0.4); yTo(relY * 0.4); } function mouseLeaveHandler() { gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.4)" }); } el.addEventListener('mousemove', mouseMoveHandler); el.addEventListener('mouseleave', mouseLeaveHandler); currentAnimation = { type: 'eventListeners', cleanup: () => { el.removeEventListener('mousemove', mouseMoveHandler); el.removeEventListener('mouseleave', mouseLeaveHandler); gsap.killTweensOf(el) } }; updateCodeDisplay('magneticHover'); }
+
+    // Timeline & Sequence
+    function timelineAnimation() { const elements = resetAnimationArea({ elementType: 'div', numElements: 3, elementBaseClass: 'timeline-element', containerClass: 'timeline-demo-container', innerHTMLContent: (i) => `E${i + 1}` }); const tl = gsap.timeline({ repeat: 1, yoyo: true }); tl.to(elements[0], { x: 100, opacity: 0.5, duration: 0.5 }).to(elements[1], { y: -50, scale: 1.3, duration: 0.5 }, "-=0.25").to(elements[2], { rotation: 90, backgroundColor: '#ff9ff3', duration: 0.5 }, "<"); currentAnimation = tl; updateCodeDisplay('timeline'); }
+    function staggerAnimation() { const elements = resetAnimationArea({ elementType: 'div', numElements: 6, elementBaseClass: 'timeline-element', containerClass: 'timeline-demo-container', innerHTMLContent: (i) => `${i + 1}` }); currentAnimation = gsap.fromTo(elements, { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", stagger: 0.2, repeat: 1, yoyo: true }); updateCodeDisplay('stagger'); }
+    function sequenceAnimation() { const elements = resetAnimationArea({ elementType: 'div', numElements: 4, elementBaseClass: 'timeline-element', containerClass: 'timeline-demo-container', innerHTMLContent: (i) => `S${i + 1}` }); const tl = gsap.timeline({ repeat: 1, yoyo: true }); elements.forEach((el, i) => { tl.to(el, { scale: 1.5, rotation: (i % 2 === 0 ? 45 : -45), duration: 0.4, ease: "back.inOut(1.7)" }, `+=${i * 0.1}`); }); currentAnimation = tl; updateCodeDisplay('sequence'); }
+    function progressAnimation() { const progressBarHTML = `<div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>`; resetAnimationArea({ htmlStructure: progressBarHTML, containerClass: 'progress-bar-container' }); currentAnimation = gsap.to("#progressFill", { width: "100%", duration: 3, ease: "linear", repeat: -1, yoyo: true }); updateCodeDisplay('progress'); }
+    function loaderAnimation() { const dots = resetAnimationArea({ elementType: 'div', numElements: 3, elementBaseClass: 'timeline-element', containerClass: 'timeline-demo-container' }); dots.forEach((dot) => gsap.set(dot, { scale: 0.5, backgroundColor: '#4facfe' })); currentAnimation = gsap.to(dots, { scale: 1, opacity: 0.3, yoyo: true, repeat: -1, duration: 0.4, ease: "power1.inOut", stagger: { each: 0.2, repeat: -1, yoyo: true } }); updateCodeDisplay('loader'); }
+    function accordionAnimation() { const accordionHTML = `<div class="accordion-item"><div class="accordion-header" data-target="#content1">Section 1</div><div class="accordion-content" id="content1">Content for section 1...</div></div><div class="accordion-item"><div class="accordion-header" data-target="#content2">Section 2</div><div class="accordion-content" id="content2">Content for section 2...</div></div>`; resetAnimationArea({ htmlStructure: accordionHTML, containerClass: 'accordion-container' }); const headers = document.querySelectorAll('.accordion-header'); let openTl = null; headers.forEach(header => { header.addEventListener('click', () => { if (openTl) openTl.kill(); const targetContent = document.querySelector(header.dataset.target); const isOpen = targetContent.classList.contains('open'); document.querySelectorAll('.accordion-content.open').forEach(openContent => { if (openContent !== targetContent) { gsap.to(openContent, { maxHeight: 0, duration: 0.3, ease: "power1.inOut" }); openContent.classList.remove('open'); } }); openTl = gsap.timeline(); if (isOpen) { openTl.to(targetContent, { maxHeight: 0, duration: 0.3, ease: "power1.inOut" }); targetContent.classList.remove('open'); } else { openTl.to(targetContent, { maxHeight: 100, duration: 0.3, ease: "power1.inOut" }); targetContent.classList.add('open'); } currentAnimation = openTl; }); }); updateCodeDisplay('accordion'); }
+
+    // Special Effects
+    function explosionAnimation() { const particles = resetAnimationArea({ elementType: 'div', numElements: 50, elementBaseClass: 'particle', containerClass: 'particles-container' }); const container = document.querySelector('.particles-container'); const w = container.offsetWidth, h = container.offsetHeight; particles.forEach(p => gsap.set(p, { x: w / 2, y: h / 2, background: `hsl(${gsap.utils.random(0, 360)}, 100%, 70%)` })); currentAnimation = gsap.to(particles, { x: () => gsap.utils.random(-w / 2, w * 1.5), y: () => gsap.utils.random(-h / 2, h * 1.5), scale: 0, opacity: 0, duration: 1.5, stagger: 0.01, ease: "power3.out" }); updateCodeDisplay('explosion'); }
+    function fireworksAnimation() { const particles = resetAnimationArea({ elementType: 'div', numElements: 60, elementBaseClass: 'particle', containerClass: 'particles-container' }); const container = document.querySelector('.particles-container'); const w = container.offsetWidth, h = container.offsetHeight; const tl = gsap.timeline({ repeat: -1, repeatDelay: 1 }); particles.forEach(p => { gsap.set(p, { x: w / 2, y: h, opacity: 1, scale: 1, background: `hsl(${gsap.utils.random(0, 60)}, 100%, 70%)` }); tl.to(p, { x: gsap.utils.random(w * 0.2, w * 0.8), y: gsap.utils.random(h * 0.1, h * 0.4), scale: 0.2, duration: gsap.utils.random(0.5, 1.2), ease: "power1.out" }, 0).to(p, { x: `+=${gsap.utils.random(-80, 80)}`, y: `+=${gsap.utils.random(-80, 80)}`, opacity: 0, scale: gsap.utils.random(0.1, 0.5), duration: gsap.utils.random(0.4, 0.8), ease: "power2.out" }, ">-0.2"); }); currentAnimation = tl; updateCodeDisplay('fireworks'); }
+    function rippleAnimation() { const ripples = resetAnimationArea({ elementType: 'div', numElements: 5, elementBaseClass: 'particle', containerClass: 'particles-container' }); const container = document.querySelector('.particles-container'); const w = container.offsetWidth, h = container.offsetHeight; ripples.forEach(r => gsap.set(r, { x: w / 2, y: h / 2, scale: 0, opacity: 1, borderRadius: '50%', border: "2px solid #4ecdc4", background: "transparent", width: "10px", height: "10px" })); currentAnimation = gsap.to(ripples, { scale: 20, opacity: 0, duration: 1.5, stagger: 0.3, ease: "power1.out", repeat: -1, repeatDelay: 1 }); updateCodeDisplay('ripple'); }
+    function matrixAnimation() { const textEl = resetAnimationArea({ elementType: 'div', elementId: 'textDemoElement', elementClass: 'text-demo', innerHTMLContent: '010101' }); Object.assign(textEl.style, { color: "#38ef7d", fontSize: "1.5rem", fontFamily: "monospace", wordBreak: "break-all" }); const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"; function generateMatrixText() { let matrixText = ""; for (let i = 0; i < 200; i++) matrixText += chars[Math.floor(Math.random() * chars.length)]; return matrixText; } textEl.innerText = generateMatrixText(); currentAnimation = gsap.to(textEl, { duration: 0.1, onRepeat: () => { textEl.innerText = generateMatrixText(); }, repeat: -1 }); updateCodeDisplay('matrix'); }
+    function clockAnimation() { const clockHTML = `<div class="hour-hand"></div><div class="minute-hand"></div><div class="second-hand"></div><div class="clock-center"></div>`; resetAnimationArea({ htmlStructure: clockHTML, containerClass: 'clock-container' }); const hourHand = document.querySelector('.hour-hand'); const minuteHand = document.querySelector('.minute-hand'); const secondHand = document.querySelector('.second-hand'); function updateClockHands() { const now = new Date(); gsap.set(secondHand, { rotation: now.getSeconds() * 6 }); gsap.set(minuteHand, { rotation: now.getMinutes() * 6 + now.getSeconds() * 0.1 }); gsap.set(hourHand, { rotation: (now.getHours() % 12) * 30 + now.getMinutes() * 0.5 }); } updateClockHands(); currentAnimation = { type: 'ticker', funcRef: updateClockHands }; gsap.ticker.add(updateClockHands); updateCodeDisplay('clock'); }
+    function randomAnimation() { const el = resetAnimationArea(); currentAnimation = gsap.to(el, { x: () => gsap.utils.random(-150, 150), y: () => gsap.utils.random(-100, 100), rotation: () => gsap.utils.random(-360, 360), scale: () => gsap.utils.random(0.5, 2), backgroundColor: () => gsap.utils.random(['#ff6b6b', '#4ecdc4', '#feca57', '#45b7d1']), duration: 1, ease: "power2.inOut", repeat: -1, yoyo: true, repeatDelay: 0.5 }); updateCodeDisplay('random'); }
+
+    // Utilities & Scroll
+    function keyframesArrayAnimation() { resetAnimationArea(); currentAnimation = gsap.to("#animatedElement", { keyframes: [{ x: 150, duration: 0.7, ease: "power1.in" }, { y: -80, duration: 0.6, ease: "circ.out" }, { rotation: 180, duration: 1, ease: "power2.inOut" }, { scale: 1.5, duration: 0.8, ease: "elastic.out(1, 0.5)" }, { x: 0, y: 0, rotation: 0, scale: 1, duration: 1, ease: "power2.inOut" }], repeat: 1, yoyo: true }); updateCodeDisplay('keyframesArray'); }
+    function wrapUtilityAnimation() { const elements = resetAnimationArea({ elementType: 'div', numElements: 5, elementBaseClass: 'timeline-element', containerClass: 'timeline-demo-container', innerHTMLContent: (i) => `W${i + 1}` }); elements.forEach((el, i) => gsap.set(el, { backgroundColor: gsap.utils.wrap(["#ff6b6b", "#4ecdc4", "#feca57", "#45b7d1", "#96ceb4"], i) })); currentAnimation = gsap.to(elements, { y: gsap.utils.wrap([-30, 0, 30, 0, -30]), scale: gsap.utils.wrap([1, 1.3, 1, 0.7, 1]), duration: 1, stagger: 0.15, ease: "sine.inOut", repeat: -1, yoyo: true }); updateCodeDisplay('wrapUtility'); }
+    function delayedCallAnimation() { const el = resetAnimationArea({ innerHTMLContent: 'Wait...' }); gsap.set(el, { scale: 1, opacity: 1, backgroundColor: "#4facfe" }); currentAnimation = gsap.timeline().to(el, { opacity: 0.5, duration: 1, ease: "power1.inOut", onComplete: () => el.innerHTML = 'Now!' }).add(gsap.delayedCall(0.5, () => { gsap.to(el, { scale: 1.5, rotation: 360, backgroundColor: "#38ef7d", duration: 0.8, ease: "elastic.out(1,0.5)", yoyo: true, repeat: 1 }); })); updateCodeDisplay('delayedCall'); }
+    function stepsEaseAnimation() { const el = resetAnimationArea({ innerHTMLContent: 'Stepping' }); gsap.set(el, { x: -150 }); currentAnimation = gsap.to(el, { x: 150, duration: 2.5, ease: "steps(12)", yoyo: true, repeat: -1, repeatDelay: 0.5 }); updateCodeDisplay('stepsEase'); }
+    function scrollTriggerBasicAnimation() { const scrollHTML = `<div class="scroller-container" id="demoScroller"><div class="scroll-content-spacer">⬇️ Scroll down in this box ⬇️</div><div class="scroll-triggered-box" id="boxToAnimate">Animate Me!</div><div class="scroll-content-spacer" style="height:150px;">More space...</div></div>`; resetAnimationArea({ htmlStructure: scrollHTML, makeDisplayScrollable: false }); gsap.set("#boxToAnimate", { opacity: 0, y: 100, scale: 0.5 }); currentAnimation = ScrollTrigger.create({ trigger: "#boxToAnimate", scroller: "#demoScroller", start: "top 85%", end: "bottom 15%", animation: gsap.to("#boxToAnimate", { opacity: 1, y: 0, scale: 1, rotation: 360, duration: 1, ease: "back.out(1.7)" }), toggleActions: "play pause resume reset", markers: { startColor: "green", endColor: "red", fontSize: "10px" }, id: "basicScrollAnim" }); updateCodeDisplay('scrollTriggerBasic'); }
+
+    // --- NEW Ease-Specific Animation Functions ---
+    function roughEaseAnimation() {
+        resetAnimationArea({innerHTMLContent: 'Rough!'});
+        gsap.set("#animatedElement", {x:0, y:0});
+        currentAnimation = gsap.to("#animatedElement", {
+            x: 100,
+            y: gsap.utils.wrap([-20, 20]),
+            duration: 2,
+            ease: "rough({ strength: 2, points: 50, template: 'none', taper: 'both', randomize: true, clamp: false })", // Corrected template
+            yoyo: true,
+            repeat: -1
+        });
+        updateCodeDisplay('roughEase');
+    }
+    function slowMoEaseAnimation() {
+        resetAnimationArea({innerHTMLContent: 'SlowMo'});
+        gsap.set("#animatedElement", {x: -150});
+        currentAnimation = gsap.to("#animatedElement", {
+            x: 150,
+            duration: 3,
+            ease: "slow(0.4, 0.6, false)",
+            yoyo: true,
+            repeat: -1
+        });
+        updateCodeDisplay('slowMoEase');
+    }
+    function expoInOutEaseAnimation() {
+        resetAnimationArea({innerHTMLContent: 'Expo!'});
+        gsap.set("#animatedElement", {x: -180});
+        currentAnimation = gsap.to("#animatedElement", {
+            x: 180,
+            duration: 2.5,
+            ease: "expo.inOut", // This is a core ease
+            yoyo: true,
+            repeat: -1
+        });
+        updateCodeDisplay('expoInOutEase');
+    }
+    function customEaseInfoAnimation() {
+        const el = resetAnimationArea({elementType:'div', elementId:'textDemoElement', elementClass:'text-demo', innerHTMLContent: 'Custom Ease: Check Code!'});
+        currentAnimation = gsap.to(el, {
+            scale: 1.1,
+            duration:1,
+            ease: "power1.inOut",
+            yoyo:true,
+            repeat:1,
+            onComplete: () => {
+                el.innerHTML = 'See GSAP Ease Visualizer!';
+            }
+        });
+        updateCodeDisplay('customEaseInfo');
+    }
+
+    function toggleCode() {
+        const codeSection = document.getElementById('codeSection');
+        const toggleText = document.getElementById('codeToggleText');
+        codeVisible = !codeVisible;
+        codeSection.classList.toggle('active', codeVisible);
+        toggleText.textContent = codeVisible ? 'Hide Code' : 'Show Code';
+    }
+
+    function copyCode() {
+        navigator.clipboard.writeText(document.getElementById('codeContent').innerText)
+            .then(() => alert('Code copied!'))
+            .catch(err => alert('Failed to copy: ' + err));
+    }
+
+    const codeExamples = {
+        // All previous code examples + new ones
+        fade: `<span class="comment">// Fade Animation</span>\n<span class="keyword">gsap</span>.<span class="function">fromTo</span>(<span class="string">"#animatedElement"</span>, { <span class="property">opacity</span>: <span class="number">1</span> }, {\n    <span class="property">opacity</span>: <span class="number">0</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span>\n});`,
+        slide: `<span class="comment">// Slide Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">x</span>: <span class="number">200</span>, <span class="property">duration</span>: <span class="number">1.5</span>, <span class="property">ease</span>: <span class="string">"back.inOut(1.7)"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span>\n});`,
+        scale: `<span class="comment">// Scale Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">scale</span>: <span class="number">1.8</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"elastic.out(1, 0.3)"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span>\n});`,
+        rotate: `<span class="comment">// Rotate Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">rotation</span>: <span class="number">360</span>, <span class="property">duration</span>: <span class="number">2</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span>\n});`,
+        skew: `<span class="comment">// Skew Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">skewX</span>: <span class="number">30</span>, <span class="property">skewY</span>: <span class="number">15</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span>\n});`,
+        flip: `<span class="comment">// Flip Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">rotationY</span>: <span class="number">180</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span>\n});`,
+        bounce: `<span class="comment">// Bounce Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">y</span>: -<span class="number">120</span>, <span class="property">duration</span>: <span class="number">0.6</span>, <span class="property">ease</span>: <span class="string">"bounce.out"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">3</span>\n});`,
+        elastic: `<span class="comment">// Elastic Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">x</span>: <span class="number">100</span>, <span class="property">scale</span>: <span class="number">1.3</span>, <span class="property">rotation</span>: <span class="number">25</span>, <span class="property">duration</span>: <span class="number">2</span>, <span class="property">ease</span>: <span class="string">"elastic.out(1, 0.3)"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span>\n});`,
+        swing: `<span class="comment">// Swing Animation</span>\n<span class="keyword">gsap</span>.<span class="function">set</span>(<span class="string">"#animatedElement"</span>, { <span class="property">transformOrigin</span>: <span class="string">"top center"</span> });\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">rotation</span>: <span class="number">15</span>, <span class="property">duration</span>: <span class="number">0.6</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">5</span>\n});`,
+        wobble: `<span class="comment">// Wobble Animation</span>\n<span class="keyword">const</span> <span class="variable">tl</span> = <span class="keyword">gsap</span>.<span class="function">timeline</span>({ <span class="property">repeat</span>: <span class="number">3</span>, <span class="property">yoyo</span>: <span class="keyword">true</span> });\n<span class="variable">tl</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { <span class="property">duration</span>: <span class="number">0.1</span>, <span class="property">x</span>: <span class="string">"-=10"</span>, <span class="property">rotation</span>: <span class="string">"-=5"</span> })\n  .<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { <span class="property">duration</span>: <span class="number">0.1</span>, <span class="property">x</span>: <span class="string">"+=20"</span>, <span class="property">rotation</span>: <span class="string">"+=10"</span> })\n  .<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { <span class="property">duration</span>: <span class="number">0.1</span>, <span class="property">x</span>: <span class="string">"-=10"</span>, <span class="property">rotation</span>: <span class="string">"-=5"</span> });`,
+        pulse: `<span class="comment">// Pulse Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">scale</span>: <span class="number">1.2</span>, <span class="property">duration</span>: <span class="number">0.5</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">5</span>\n});`,
+        shake: `<span class="comment">// Shake Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">x</span>: <span class="string">"+=10"</span>, <span class="property">duration</span>: <span class="number">0.05</span>, <span class="property">ease</span>: <span class="string">"none"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">15</span>, <span class="property">clearProps</span>:<span class="string">"x"</span>\n});`,
+        morph: `<span class="comment">// Morph Animation (CSS properties)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#morphElement"</span>, { \n    <span class="property">borderRadius</span>: <span class="string">"20% 80% 30% 70% / 70% 30% 80% 20%"</span>, <span class="property">scale</span>: <span class="number">1.4</span>, <span class="property">rotation</span>: <span class="number">45</span>, \n    <span class="property">backgroundColor</span>: <span class="string">"#4ecdc4"</span>, <span class="property">duration</span>: <span class="number">1.5</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span> \n});`,
+        glow: `<span class="comment">// Glow Animation (box-shadow)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { \n    <span class="property">boxShadow</span>: <span class="string">"0 0 25px 10px #feca57"</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span> \n});`,
+        blur: `<span class="comment">// Blur Animation (CSS filter)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { \n    <span class="property">filter</span>: <span class="string">"blur(8px)"</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span> \n});`,
+        color: `<span class="comment">// Color Animation (background)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { \n    <span class="property">backgroundColor</span>: <span class="string">"#4facfe"</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"none"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span> \n});`,
+        gradient: `<span class="comment">// Gradient Animation (simple swap)</span>\n<span class="keyword">gsap</span>.<span class="function">set</span>(<span class="string">"#animatedElement"</span>, { <span class="property">background</span>: <span class="string">"linear-gradient(45deg, #ff6b6b, #feca57)"</span>});\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { \n    <span class="property">background</span>: <span class="string">"linear-gradient(45deg, #4facfe, #00f2fe)"</span>, <span class="property">duration</span>: <span class="number">1.5</span>, <span class="property">ease</span>: <span class="string">"none"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span> \n});`,
+        shadow: `<span class="comment">// Shadow Animation (box-shadow)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { \n    <span class="property">boxShadow</span>: <span class="string">"15px 15px 30px rgba(0,0,0,0.5)"</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: <span class="number">1</span> \n});`,
+        path: `<span class="comment">// Path Animation (MotionPathPlugin)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#pathMover"</span>, {\n    <span class="property">motionPath</span>: { <span class="property">path</span>: <span class="string">"#motionPath"</span>, <span class="property">align</span>: <span class="string">"#motionPath"</span>, <span class="property">autoRotate</span>: <span class="keyword">true</span> },\n    <span class="property">duration</span>: <span class="number">4</span>, <span class="property">ease</span>: <span class="string">"power1.inOut"</span>, <span class="property">repeat</span>: -<span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>\n});`,
+        orbital: `<span class="comment">// Orbital Animation (simulated)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#orbiter"</span>, {\n    <span class="property">rotation</span>: <span class="number">360</span>, <span class="property">transformOrigin</span>: <span class="string">"50px 140px"</span>,\n    <span class="property">duration</span>: <span class="number">4</span>, <span class="property">ease</span>: <span class="string">"none"</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        spiral: `<span class="comment">// Spiral Path Animation (MotionPathPlugin)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#pathMover"</span>, {\n    <span class="property">motionPath</span>: { <span class="property">path</span>: <span class="string">"#spiralPath"</span>, <span class="property">align</span>: <span class="string">"#spiralPath"</span>, <span class="property">autoRotate</span>: <span class="keyword">true</span> },\n    <span class="property">duration</span>: <span class="number">8</span>, <span class="property">ease</span>: <span class="string">"none"</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        figureEight: `<span class="comment">// Figure 8 Path Animation (MotionPathPlugin)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#pathMover"</span>, {\n    <span class="property">motionPath</span>: { <span class="property">path</span>: <span class="string">"#figureEightPath"</span>, <span class="property">align</span>: <span class="string">"#figureEightPath"</span>, <span class="property">autoRotate</span>: <span class="keyword">true</span> },\n    <span class="property">duration</span>: <span class="number">5</span>, <span class="property">ease</span>: <span class="string">"power1.inOut"</span>, <span class="property">repeat</span>: -<span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>\n});`,
+        waveMotion: `<span class="comment">// Wave Motion (multiple elements)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">".wave-dot"</span>, {\n    <span class="property">y</span>: (<span class="variable">i</span>) => (<span class="variable">i</span> % <span class="number">2</span> === <span class="number">0</span> ? -<span class="number">20</span> : <span class="number">20</span>), <span class="property">x</span>: (<span class="variable">i</span>) => <span class="variable">i</span> * <span class="number">30</span>,\n    <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"sine.inOut"</span>,\n    <span class="property">stagger</span>: { <span class="property">each</span>: <span class="number">0.1</span>, <span class="property">from</span>: <span class="string">"center"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span> },\n    <span class="property">yoyo</span>:<span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        magnetic: `<span class="comment">// Magnetic Attraction (simple)</span>\n<span class="keyword">gsap</span>.<span class="function">fromTo</span>(<span class="string">"#animatedElement"</span>, {<span class="property">x</span>:<span class="number">100</span>, <span class="property">y</span>:<span class="number">50</span>}, {\n    <span class="property">x</span>: <span class="number">0</span>, <span class="property">y</span>: <span class="number">0</span>, <span class="property">duration</span>: <span class="number">1.5</span>, <span class="property">ease</span>: <span class="string">"elastic.out(1, 0.5)"</span>\n});`,
+        textReveal: `<span class="comment">// Text Reveal Animation</span>\n<span class="keyword">gsap</span>.<span class="function">from</span>(<span class="string">"#textDemoElement"</span>, { <span class="property">opacity</span>: <span class="number">0</span>, <span class="property">y</span>: <span class="number">20</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"power2.out"</span> });`,
+        typewriter: `<span class="comment">// Typewriter Animation (TextPlugin)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#textDemoElement"</span>, { <span class="property">duration</span>: <span class="number">2</span>, <span class="property">text</span>: <span class="string">"This is a typewriter effect..."</span>, <span class="property">ease</span>: <span class="string">"none"</span> });`,
+        textWave: `<span class="comment">// Text Wave Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">".text-char"</span>, {\n    <span class="property">y</span>: -<span class="number">15</span>, <span class="property">duration</span>: <span class="number">0.5</span>, <span class="property">ease</span>: <span class="string">"sine.inOut"</span>,\n    <span class="property">stagger</span>: { <span class="property">each</span>: <span class="number">0.07</span>, <span class="property">from</span>: <span class="string">"start"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span> },\n    <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        textGlitch: `<span class="comment">// Text Glitch Animation (Simplified)</span>\n<span class="keyword">const</span> <span class="variable">el</span> = <span class="function">document</span>.<span class="function">getElementById</span>(<span class="string">'textDemoElement'</span>);\n<span class="keyword">const</span> <span class="variable">tl</span> = <span class="keyword">gsap</span>.<span class="function">timeline</span>({ <span class="property">repeat</span>: -<span class="number">1</span>, <span class="property">repeatDelay</span>: <span class="number">1</span> }); \n<span class="comment">// ... (logic to change text and position randomly) ...</span>`,
+        textSplit: `<span class="comment">// Split Text Animation</span>\n<span class="keyword">gsap</span>.<span class="function">from</span>(<span class="string">".text-char"</span>, {\n    <span class="property">y</span>: <span class="number">50</span>, <span class="property">opacity</span>: <span class="number">0</span>, <span class="property">rotationX</span>: -<span class="number">90</span>,\n    <span class="property">duration</span>: <span class="number">0.8</span>, <span class="property">ease</span>: <span class="string">"back.out(1.7)"</span>, <span class="property">stagger</span>: <span class="number">0.1</span>\n});`,
+        textMorph: `<span class="comment">// Text Morph Animation (TextPlugin)</span>\n<span class="keyword">const</span> <span class="variable">tl</span> = <span class="keyword">gsap</span>.<span class="function">timeline</span>({<span class="property">repeat</span>: -<span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeatDelay</span>: <span class="number">1</span>});\n<span class="variable">tl</span>.<span class="function">to</span>(<span class="string">"#textDemoElement"</span>, { <span class="property">duration</span>: <span class="number">2</span>, <span class="property">text</span>: <span class="string">"Morphing Text"</span> })\n  .<span class="function">to</span>(<span class="string">"#textDemoElement"</span>, { <span class="property">duration</span>: <span class="number">2</span>, <span class="property">text</span>: <span class="string">"To Something New"</span> }, <span class="string">"+=1"</span>);`,
+        flipCard: `<span class="comment">// Card Flip Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#flipCardInner"</span>, { <span class="property">rotationY</span>: <span class="string">"+=180"</span>, <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span> });`,
+        cube: `<span class="comment">// 3D Cube Animation (Simplified)</span>\n<span class="keyword">gsap</span>.<span class="function">set</span>(<span class="string">"#animatedElement"</span>, { <span class="property">transformPerspective</span>: <span class="number">500</span> });\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { <span class="property">rotationX</span>: <span class="number">360</span>, <span class="property">rotationY</span>:<span class="number">360</span>, <span class="property">duration</span>: <span class="number">3</span>, <span class="property">repeat</span>: -<span class="number">1</span>, <span class="property">yoyo</span>:<span class="keyword">true</span> });`,
+        perspective: `<span class="comment">// Perspective Animation</span>\n<span class="keyword">gsap</span>.<span class="function">set</span>(<span class="string">"#animatedElement"</span>, { <span class="property">transformPerspective</span>: <span class="number">800</span>, <span class="property">transformStyle</span>: <span class="string">"preserve-3d"</span> });\n<span class="keyword">gsap</span>.<span class="function">timeline</span>({ <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span> })\n    .<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { <span class="property">rotationX</span>: <span class="number">45</span>, <span class="property">rotationY</span>: -<span class="number">30</span>, <span class="property">duration</span>: <span class="number">2</span> })\n    .<span class="function">to</span>(<span class="string">"#animatedElement"</span>, { <span class="property">rotationX</span>: -<span class="number">30</span>, <span class="property">rotationY</span>: <span class="number">45</span>, <span class="property">duration</span>: <span class="number">2</span> });`,
+        liquid: `<span class="comment">// Liquid/Blob Animation (CSS properties)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#liquidElement"</span>, {\n    <span class="property">scaleX</span>: <span class="number">1.2</span>, <span class="property">scaleY</span>: <span class="number">0.8</span>, <span class="property">borderRadius</span>: <span class="string">"60% 40% ... / ..."</span>,\n    <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"elastic.out(1, 0.4)"</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        particle: `<span class="comment">// Particle Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">".particle"</span>, {\n    <span class="property">x</span>: () => <span class="keyword">gsap</span>.<span class="property">utils</span>.<span class="function">random</span>(<span class="number">0</span>, <span class="string">"100%"</span>), <span class="property">y</span>: () => <span class="keyword">gsap</span>.<span class="property">utils</span>.<span class="function">random</span>(<span class="number">0</span>, <span class="string">"100%"</span>),\n    <span class="property">duration</span>: <span class="number">2</span>, <span class="property">stagger</span>: <span class="number">0.02</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        magneticHover: `<span class="comment">// Magnetic Hover (gsap.quickTo())</span>\n<span class="keyword">const</span> <span class="variable">xTo</span> = <span class="keyword">gsap</span>.<span class="function">quickTo</span>(<span class="string">"#magneticHoverEl"</span>, <span class="string">"x"</span>, { <span class="comment">/* ... */</span> });\n<span class="keyword">const</span> <span class="variable">yTo</span> = <span class="keyword">gsap</span>.<span class="function">quickTo</span>(<span class="string">"#magneticHoverEl"</span>, <span class="string">"y"</span>, { <span class="comment">/* ... */</span> });\n<span class="comment">// Event listeners for mousemove and mouseleave</span>`,
+        timeline: `<span class="comment">// Timeline Animation</span>\n<span class="keyword">const</span> <span class="variable">tl</span> = <span class="keyword">gsap</span>.<span class="function">timeline</span>({ <span class="property">repeat</span>: <span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span> });\n<span class="variable">tl</span>.<span class="function">to</span>(<span class="comment">/* el1 */</span>, { <span class="comment">/* ... */</span> }).<span class="function">to</span>(<span class="comment">/* el2 */</span>, { <span class="comment">/* ... */</span> }, <span class="string">"-=0.25"</span>).<span class="function">to</span>(<span class="comment">/* el3 */</span>, { <span class="comment">/* ... */</span> }, <span class="string">"<"</span>);`,
+        stagger: `<span class="comment">// Stagger Animation</span>\n<span class="keyword">gsap</span>.<span class="function">fromTo</span>(<span class="string">".timeline-element"</span>, { <span class="comment">/* from */</span> }, { <span class="comment">/* to */</span>, <span class="property">stagger</span>: <span class="number">0.2</span>, <span class="property">repeat</span>:<span class="number">1</span>, <span class="property">yoyo</span>:<span class="keyword">true</span> });`,
+        sequence: `<span class="comment">// Sequence Animation (timeline & loop)</span>\n<span class="keyword">const</span> <span class="variable">tl</span> = <span class="keyword">gsap</span>.<span class="function">timeline</span>({ <span class="property">repeat</span>: <span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span> });\n<span class="comment">// Loop through elements, adding tweens to tl with position parameter</span>`,
+        progress: `<span class="comment">// Progress Bar Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#progressFill"</span>, { <span class="property">width</span>: <span class="string">"100%"</span>, <span class="property">duration</span>: <span class="number">3</span>, <span class="property">repeat</span>: -<span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span> });`,
+        loader: `<span class="comment">// Loader Animation (dots)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">".timeline-element"</span>, { <span class="comment">/* ... */</span>, <span class="property">stagger</span>: { <span class="property">each</span>: <span class="number">0.2</span>, <span class="property">repeat</span>: -<span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span> } });`,
+        accordion: `<span class="comment">// Accordion Animation (click events & maxHeight)</span>\n<span class="comment">// Event listeners on headers, tween maxHeight of content panel.</span>`,
+        explosion: `<span class="comment">// Explosion Animation (particles)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">".particle"</span>, { <span class="comment">/* x, y, scale, opacity */</span>, <span class="property">stagger</span>: <span class="number">0.01</span>, <span class="property">ease</span>: <span class="string">"power3.out"</span> });`,
+        fireworks: `<span class="comment">// Fireworks Animation (timeline, particles)</span>\n<span class="keyword">const</span> <span class="variable">tl</span> = <span class="keyword">gsap</span>.<span class="function">timeline</span>({<span class="property">repeat</span>: -<span class="number">1</span>});\n<span class="comment">// Particles rise then burst, added to tl.</span>`,
+        ripple: `<span class="comment">// Ripple Animation (particles as rings)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">".particle"</span>, { <span class="property">scale</span>: <span class="number">20</span>, <span class="property">opacity</span>: <span class="number">0</span>, <span class="property">stagger</span>: <span class="number">0.3</span>, <span class="property">repeat</span>: -<span class="number">1</span> });`,
+        matrix: `<span class="comment">// Matrix Rain (Simplified text update)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#textDemoElement"</span>, { <span class="property">duration</span>: <span class="number">0.1</span>, <span class="property">onRepeat</span>: () => { <span class="comment">/* update text */</span> }, <span class="property">repeat</span>: -<span class="number">1</span> });`,
+        clock: `<span class="comment">// Clock Animation (gsap.ticker)</span>\n<span class="keyword">function</span> <span class="function">updateClockHands</span>() { <span class="comment">/* sets rotation of hands */</span> }\n<span class="keyword">gsap</span>.<span class="property">ticker</span>.<span class="function">add</span>(<span class="variable">updateClockHands</span>);`,
+        random: `<span class="comment">// Random Properties Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">x</span>: <span class="string">"random(-150, 150)"</span>, <span class="comment">/* y, rotation, scale, backgroundColor */</span>,\n    <span class="property">duration</span>: <span class="number">1</span>, <span class="property">ease</span>: <span class="string">"power2.inOut"</span>, <span class="property">repeat</span>: -<span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>\n});`,
+        keyframesArray: `<span class="comment">// Keyframes Array Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">keyframes</span>: [\n        {<span class="property">x</span>: <span class="number">150</span>, <span class="property">duration</span>: <span class="number">0.7</span>}, {<span class="property">y</span>: -<span class="number">80</span>, <span class="property">duration</span>: <span class="number">0.6</span>}, \n        {<span class="property">rotation</span>: <span class="number">180</span>, <span class="property">duration</span>: <span class="number">1</span>}, {<span class="property">scale</span>: <span class="number">1.5</span>, <span class="property">duration</span>: <span class="number">0.8</span>},\n        {<span class="property">x</span>:<span class="number">0</span>, <span class="property">y</span>:<span class="number">0</span>, <span class="property">rotation</span>:<span class="number">0</span>, <span class="property">scale</span>:<span class="number">1</span>, <span class="property">duration</span>:<span class="number">1</span>}\n    ],\n    <span class="property">repeat</span>: <span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>\n});`,
+        wrapUtility: `<span class="comment">// gsap.utils.wrap() Utility</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">".timeline-element"</span>, {\n    <span class="property">y</span>: <span class="keyword">gsap</span>.<span class="property">utils</span>.<span class="function">wrap</span>([-<span class="number">30</span>, <span class="number">0</span>, <span class="number">30</span>]),\n    <span class="property">scale</span>: <span class="keyword">gsap</span>.<span class="property">utils</span>.<span class="function">wrap</span>([<span class="number">1</span>, <span class="number">1.3</span>, <span class="number">0.7</span>]),\n    <span class="property">duration</span>: <span class="number">1</span>, <span class="property">stagger</span>: <span class="number">0.15</span>, <span class="property">repeat</span>: -<span class="number">1</span>, <span class="property">yoyo</span>: <span class="keyword">true</span>\n});`,
+        delayedCall: `<span class="comment">// gsap.delayedCall() Utility</span>\n<span class="keyword">gsap</span>.<span class="function">delayedCall</span>(<span class="number">1</span>, <span class="function">myFunction</span>, [<span class="string">"param1"</span>, <span class="string">"param2"</span>], <span class="variable">scope</span>);\n<span class="comment">// Example: Animate, then call a function that animates something else.</span>`,
+        stepsEase: `<span class="comment">// steps() Ease Animation</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">x</span>: <span class="number">150</span>, <span class="property">duration</span>: <span class="number">2.5</span>, <span class="property">ease</span>: <span class="string">"steps(12)"</span>,\n    <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        scrollTriggerBasic: `<span class="comment">// ScrollTrigger Basic Animation</span>\n<span class="keyword">ScrollTrigger</span>.<span class="function">create</span>({\n    <span class="property">trigger</span>: <span class="string">"#boxToAnimate"</span>, <span class="property">scroller</span>: <span class="string">"#demoScroller"</span>,\n    <span class="property">animation</span>: <span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#boxToAnimate"</span>, { <span class="comment">/* ... */</span> }),\n    <span class="property">toggleActions</span>: <span class="string">"play pause resume reset"</span>, <span class="property">markers</span>: <span class="keyword">true</span>\n});`,
+
+        // NEW Ease Code Examples
+        roughEase: `<span class="comment">// RoughEase Animation</span>\n<span class="comment">// Requires EasePack.min.js and gsap.registerPlugin(RoughEase);</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">x</span>: <span class="number">100</span>,\n    <span class="property">duration</span>: <span class="number">2</span>,\n    <span class="property">ease</span>: <span class="string">"rough({ strength: 2, points: 50, template: 'none', taper: 'both', randomize: true })"</span>,\n    <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        slowMoEase: `<span class="comment">// SlowMo Ease Animation</span>\n<span class="comment">// Requires EasePack.min.js and gsap.registerPlugin(SlowMo);</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">x</span>: <span class="number">150</span>,\n    <span class="property">duration</span>: <span class="number">3</span>,\n    <span class="property">ease</span>: <span class="string">"slow(0.4, 0.6, false)"</span>, <span class="comment">// linearRatio, power, yoyoMode</span>\n    <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        expoInOutEase: `<span class="comment">// Expo.inOut Ease Animation (Strong acceleration/deceleration - Core GSAP)</span>\n<span class="keyword">gsap</span>.<span class="function">to</span>(<span class="string">"#animatedElement"</span>, {\n    <span class="property">x</span>: <span class="number">180</span>,\n    <span class="property">duration</span>: <span class="number">2.5</span>,\n    <span class="property">ease</span>: <span class="string">"expo.inOut"</span>,\n    <span class="property">yoyo</span>: <span class="keyword">true</span>, <span class="property">repeat</span>: -<span class="number">1</span>\n});`,
+        customEaseInfo: `<span class="comment">// Custom Ease (Conceptual Info)</span>\n<span class="comment">// 1. Use GSAP Ease Visualizer online: https://gsap.com/docs/v3/Eases/CustomEase/</span>\n<span class="comment">// 2. Create curve, copy SVG path or points string.</span>\n<span class="comment">// 3. Register: CustomEase.create("myCustomEase", "SVG_PATH_OR_POINTS"); (Requires CustomEase plugin - Club GreenSock)</span>\n<span class="comment">// 4. Use: gsap.to("#el", {x:100, ease:"myCustomEase"});</span>\n<span class="keyword">document</span>.<span class="function">getElementById</span>(<span class="string">'textDemoElement'</span>).<span class="property">innerHTML</span> = \n    <span class="string">'CustomEase: See GSAP Ease Visualizer! Club GreenSock plugin needed for CustomEase.create().'</span>;`
+    };
+
+    fadeAnimation(); // Initial animation
+</script>
+</body>
+</html>
