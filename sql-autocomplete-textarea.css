@@ -1,0 +1,76 @@
+sql-autocomplete-textarea {
+    --lumo-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    --lumo-font-size-s: 14px;
+    --lumo-line-height-s: 1.6;
+    --lumo-border-radius-s: 6px;
+    --lumo-space-s: 15px;
+    --lumo-primary-color: #007acc;
+    --lumo-contrast-20pct: #f8f9fa;
+    --lumo-contrast-40pct: #f0f0f0;
+    --lumo-contrast-60pct: #ddd;
+    --lumo-contrast-80pct: #ccc;
+    --lumo-contrast-90pct: #666;
+    --lumo-shade-20pct: rgba(0, 0, 0, 0.15);
+}
+
+/* Override Vaadin theme styles if needed */
+sql-autocomplete-textarea::part(container) {
+    width: 100%;
+    position: relative;
+}
+
+sql-autocomplete-textarea::part(textarea) {
+    font-family: var(--lumo-font-family);
+    font-size: var(--lumo-font-size-s);
+    line-height: var(--lumo-line-height-s);
+    border-radius: var(--lumo-border-radius-s);
+    border: 2px solid var(--lumo-contrast-60pct);
+    background-color: #fafafa;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+sql-autocomplete-textarea::part(textarea):focus {
+    border-color: var(--lumo-primary-color);
+    background-color: white;
+    outline: none;
+}
+
+sql-autocomplete-textarea::part(suggestions-popup) {
+    position: absolute;
+    background: white;
+    border: 1px solid var(--lumo-contrast-80pct);
+    border-radius: var(--lumo-border-radius-s);
+    box-shadow: 0 4px 12px var(--lumo-shade-20pct);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    min-width: 200px;
+    font-family: var(--lumo-font-family);
+    font-size: var(--lumo-font-size-s);
+}
+
+sql-autocomplete-textarea::part(suggestion-item) {
+    padding: 10px var(--lumo-space-s);
+    cursor: pointer;
+    border-bottom: 1px solid var(--lumo-contrast-40pct);
+    transition: background-color 0.1s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+sql-autocomplete-textarea::part(suggestion-item):hover {
+    background-color: var(--lumo-contrast-20pct);
+}
+
+sql-autocomplete-textarea::part(suggestion-item):last-child {
+    border-bottom: none;
+}
+
+sql-autocomplete-textarea::part(suggestion-type) {
+    font-size: 11px;
+    opacity: 0.7;
+    text-transform: uppercase;
+    font-weight: bold;
+    color: var(--lumo-contrast-90pct);
+}
