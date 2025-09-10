@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>GSAP Focused Card Strip — Distance-based Scaling</title>
+<!-- GSAP CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<style>
+  :root{
+    --cards: 7;
+    --card-w: 220px;        /* base card width */
+    --card-h: 300px;        /* base card height */
+    --gap: 40px;            /* center-to-center horizontal gap minus width is handled by absolute placement */
+    --focus-scale: 1.45;
+    --min-scale: 0.7;
+  }
+
+  html,body{
+    height:100%;
+    margin:0;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg,#0f1724 0%, #071228 100%);
+    color:#e6eef8;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+
+  .wrap {
+    height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 30px;
+    box-sizing: border-box;
+  }
+
+  .stage {
+    position: relative;
+    width: calc((var(--card-w) + var(--gap)) * var(--cards));
+    max-width: calc(100vw - 80px);
+    height: calc(var(--card-h) + 40px);
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  /* each card is absolutely positioned; transform origin center to scale around center */
+  .card {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: var(--card-w);
+    height: var(--card-h);
+    transform-origin: 50% 50%;
+    transform: translateY(-50%) scale(1);
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(2,8,23,0.75);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size: 40px;
+    color: white;
+    cursor: pointer;
+    transition: box-shadow .25s ease;
+    outline: none;
+  }
+
+  .card:focus {
+    box-shadow: 0 18px 50px rgba(3,14,40,0.85);
+  }
+
+  /* simple visual variety using gradient backgrounds */
+  .card .inner {
+    width: 96%;
+    height: 92%;
+    border-radius: 12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-direction:column;
+    gap:8px;
+    padding: 12px;
+    box-sizing: border-box;
+    text-align:center;
+  }
+
+  .label {
+    font-size: 14px;
+    opacity: .9;
+    font-weight:600;
+  }
+
+  /* colors (a few palette variants) */
+  .c0 { background: linear-gradient(135deg,#1e3a8a,#7c3aed); }
+  .c1 { background: linear-gradient(135deg,#065f46,#10b981); }
+  .c2 { background: linear-gradient(135deg,#b45309,#f59e0b); }
+  .c3 { background: linear-gradient(135deg,#991b1b,#ef4444); }
+  .c4 { background: linear-gradient(135deg,#0ea5e9,#0369a1); }
+  .c5 { background: linear-gradient(135deg,#7c2d12,#f97316); }
+  .c6 { background: linear-gradient(135deg,#0f1724,#374151); }
+
+  /* small helper for instructions */
+  .hud {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: -70px;
+    color: #cfe6ff;
+    font-size: 13px;
+    text-align:center;
+    opacity: .9;
+  }
+
+  @media (max-width:900px){
+    :root { --card-w: 160px; --card-h: 220px; --gap: 24px; --focus-scale: 1.35; --min-scale: 0.72; }
+    .hud{ font-size:12px; bottom:-80px;}
+  }
+
+  @media (max-width:520px){
+    :root { --card-w: 130px; --card-h: 180px; --gap: 18px; --focus-scale: 1.28; --min-scale: 0.75; }
+    .hud{ font-size:11px; bottom:-90px;}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="stage" id="stage" tabindex="0" aria-label="Card strip. Use mouse hover or keyboard arrows to focus a card.">
+      <!-- Cards will be injected by JS -->
+      <div class="hud" id="hud">Hover or tap a card to focus. Left/Right arrows to move focus. Click background to clear.</div>
+    </div>
+  </div>
+
+<script>
+/* Configuration */
+const CONFIG = {
+  n: 7,
+  cardW: null, // computed from CSS
+  gap: null,   // computed from CSS
+  focusScale: null,
+  minScale: null,
+  anim: { duration: 0.45, ease: "power3.out" }
+};
+
+const stage = document.getElementById('stage');
+let focusedIndex = -1; // -1 means none focused
+
+/* Helper to read CSS variables */
+function readVars() {
+  const cs = getComputedStyle(document.documentElement);
+  CONFIG.cardW = parseFloat(cs.getPropertyValue('--card-w')) || 220;
+  CONFIG.gap = parseFloat(cs.getPropertyValue('--gap')) || 40;
+  CONFIG.focusScale = parseFloat(cs.getPropertyValue('--focus-scale')) || 1.45;
+  CONFIG.minScale = parseFloat(cs.getPropertyValue('--min-scale')) || 0.7;
+}
+readVars();
+window.addEventListener('resize', readVars);
+
+/* Build cards */
+const cards = [];
+for(let i=0;i<CONFIG.n;i++){
+  const el = document.createElement('button');
+  el.className = `card c${i % 7}`;
+  el.setAttribute('aria-label', `Card ${i+1}`);
+  el.setAttribute('data-index', i);
+  el.tabIndex = 0;
+
+  // inner content
+  el.innerHTML = `<div class="inner"><div style="font-size:28px;font-weight:800">#${i+1}</div><div class="label">Card ${i+1}</div></div>`;
+  stage.appendChild(el);
+  cards.push(el);
+}
+
+/* Position cards by absolute left using constant center-to-center spacing:
+   We'll place card center at x = (cardW + gap) * i + (cardW/2)
+   But since left is relative to card left, set left = i * (cardW + gap)
+*/
+function layoutCards(){
+  const spacing = CONFIG.cardW + CONFIG.gap;
+  // update stage width to accommodate all (keeps it centered due to CSS)
+  stage.style.width = (spacing * CONFIG.n) + 'px';
+  cards.forEach((c,i) => {
+    c.style.left = `${i * spacing}px`;
+    // reset transform baseline (to keep consistent before animations)
+    c.style.transform = `translateY(-50%) scale(1)`;
+  });
+}
+layoutCards();
+
+/* Compute scale based on distance from focused index */
+function computeScaleForDistance(dist){
+  // linear falloff from focusScale down to minScale across maxDist (n-1)
+  const maxDist = CONFIG.n - 1;
+  if(maxDist <= 0) return 1;
+  const step = (CONFIG.focusScale - CONFIG.minScale) / maxDist;
+  return Math.max(CONFIG.minScale, CONFIG.focusScale - dist * step);
+}
+
+/* compute z-index so focused and near cards are above far ones */
+function computeZForDistance(dist){
+  // smaller distance -> bigger z
+  return (CONFIG.n + 1) - dist;
+}
+
+/* animate to a specific focused index (-1 to clear) */
+function animateToFocus(index){
+  focusedIndex = index;
+  cards.forEach((c,i) => {
+    const dist = index === -1 ? 0 : Math.abs(i - index);
+    const targetScale = index === -1 ? 1 : computeScaleForDistance(dist);
+    // elevation and shadow for focused
+    const isFocused = (i === index);
+    const z = computeZForDistance(dist);
+    // slight y offset for non-focused for nice depth feel (optional)
+    const yOffset = index === -1 ? '-50%' : (isFocused ? '-54%' : '-48%'); // focused slightly lifted
+    // box shadow intensity
+    const shadow = isFocused ? '0 22px 70px rgba(3,14,40,0.9)' : '0 8px 30px rgba(2,8,23,0.75)';
+
+    // Use GSAP for smooth transform
+    gsap.to(c, {
+      duration: CONFIG.anim.duration,
+      ease: CONFIG.anim.ease,
+      // translateY is done by setting translateY percentage; to animate that we animate yPercent instead
+      // but because we already use translateY(-50%) in initial transform, we animate translateY to maintain center.
+      // We'll animate via an explicit transform string so that scaling applies cleanly
+      onStart() { c.style.zIndex = z; c.style.boxShadow = shadow; },
+      // build transform string
+      // keep translateX untouched (it's absolute left), animate translateY and scale
+      // we want translateY to be e.g. -50% or -54% etc. To animate, we'll animate a custom property then apply transform in onUpdate.
+      // Simpler: animate using gsap.set on css transform directly:
+      // But direct string transforms don't tween well; instead tween scale and y separately using GSAP's CSSPlugin.
+      yPercent: parseFloat(yOffset.replace('%','')),
+      scale: targetScale
+    });
+  });
+}
+
+/* Interaction handlers */
+stage.addEventListener('mouseenter', (e) => {
+  // nothing specific; per-card hover will focus
+}, {passive:true});
+
+cards.forEach((c) => {
+  const idx = Number(c.dataset.index);
+
+  c.addEventListener('mouseenter', (ev) => {
+    animateToFocus(idx);
+  }, {passive:true});
+
+  c.addEventListener('click', (ev) => {
+    // toggle focus on click (if already focused, clear)
+    if(focusedIndex === idx) animateToFocus(-1);
+    else animateToFocus(idx);
+  });
+
+  // keyboard support when a card itself is focused: Enter/Space toggles
+  c.addEventListener('keydown', (ev) => {
+    if(ev.key === 'Enter' || ev.key === ' '){
+      ev.preventDefault();
+      if(focusedIndex === idx) animateToFocus(-1);
+      else animateToFocus(idx);
+    }
+  });
+});
+
+/* Clear focus on leaving the entire stage area */
+stage.addEventListener('mouseleave', (e) => {
+  animateToFocus(-1);
+}, {passive:true});
+
+/* Clicking on stage background clears focus (but not when clicking a card because that event stops here) */
+stage.addEventListener('click', (ev) => {
+  // if user clicked exactly on stage (not card), clear
+  if(ev.target === stage) animateToFocus(-1);
+});
+
+/* Keyboard left/right to move focus (stage as keyboard container) */
+stage.addEventListener('keydown', (ev) => {
+  if(ev.key === 'ArrowRight'){
+    ev.preventDefault();
+    if(focusedIndex === -1) animateToFocus(0);
+    else animateToFocus(Math.min(CONFIG.n - 1, focusedIndex + 1));
+    // focus the card element for keyboard accessibility
+    const c = cards[focusedIndex === -1 ? 0 : focusedIndex];
+    if(c) c.focus();
+  } else if(ev.key === 'ArrowLeft'){
+    ev.preventDefault();
+    if(focusedIndex === -1) animateToFocus(CONFIG.n - 1);
+    else animateToFocus(Math.max(0, focusedIndex - 1));
+    const c = cards[focusedIndex];
+    if(c) c.focus();
+  } else if(ev.key === 'Escape'){
+    animateToFocus(-1);
+  }
+});
+
+/* Make sure stage is keyboard-focusable */
+stage.tabIndex = 0;
+
+/* Initial small animation to settle */
+gsap.from(cards, { duration: 0.75, ease: "power4.out", yPercent: -10, stagger: 0.04, opacity: 0.98 });
+
+/* Re-layout and apply neutral animation on resize */
+let resizeTimer = null;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(()=> {
+    readVars();
+    layoutCards();
+    // re-animate to current focus to recompute scales and z
+    animateToFocus(focusedIndex);
+  }, 120);
+});
+
+/* Expose some controls for debugging (optional) */
+window._cardStrip = {
+  focus: (i) => animateToFocus(i),
+  clear: () => animateToFocus(-1),
+  getFocused: () => focusedIndex
+};
+</script>
+</body>
+</html>
