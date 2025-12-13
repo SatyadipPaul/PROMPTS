@@ -6,9 +6,10 @@
     <title>Kubernetes 3D Dashboard</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/renderers/CSS2DRenderer.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
+        
         :root {
             --primary: #326CE5;
             --primary-dark: #1a3a6e;
@@ -23,7 +24,7 @@
             --warning: #d29922;
             --error: #f85149;
         }
-
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             background: var(--bg-dark);
@@ -31,8 +32,7 @@
             min-height: 100vh;
             overflow-x: hidden;
         }
-
-        /* Header */
+        
         .header {
             background: linear-gradient(135deg, var(--primary-dark), var(--bg-card));
             padding: 1rem 2rem;
@@ -46,16 +46,86 @@
             right: 0;
             z-index: 1000;
         }
-
+        
         .logo {
             display: flex;
             align-items: center;
             gap: 12px;
         }
-
+        
         .logo svg { width: 40px; height: 40px; }
         .logo h1 { font-size: 1.5rem; font-weight: 600; }
-
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border-radius: 25px;
+            border: 1px solid var(--border);
+        }
+        
+        .toggle-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .toggle-label.active {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            cursor: pointer;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--warning);
+            border-radius: 26px;
+            transition: 0.3s;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        
+        .toggle-switch input:checked + .toggle-slider {
+            background: var(--success);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
         .connection-status {
             display: flex;
             align-items: center;
@@ -65,37 +135,37 @@
             background: var(--bg-card);
             font-size: 0.85rem;
         }
-
+        
         .status-dot {
             width: 10px;
             height: 10px;
             border-radius: 50%;
             background: var(--error);
         }
-
+        
         .status-dot.connected { background: var(--success); animation: pulse 2s infinite; }
-
+        .status-dot.demo { background: var(--warning); animation: pulse 2s infinite; }
+        
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
-
-        /* Main Layout */
+        
         .main-container {
             display: flex;
             margin-top: 70px;
             min-height: calc(100vh - 70px);
         }
-
-        /* Sidebar */
+        
         .sidebar {
-            width: 280px;
+            width: 300px;
             background: var(--bg-card);
             border-right: 1px solid var(--border);
             padding: 1.5rem;
             overflow-y: auto;
+            max-height: calc(100vh - 70px);
         }
-
+        
         .sidebar h2 {
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -103,22 +173,22 @@
             color: var(--text-secondary);
             margin-bottom: 1rem;
         }
-
+        
         .config-section {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
-
+        
         .input-group {
             margin-bottom: 1rem;
         }
-
+        
         .input-group label {
             display: block;
             font-size: 0.85rem;
             color: var(--text-secondary);
             margin-bottom: 6px;
         }
-
+        
         .input-group input, .input-group select {
             width: 100%;
             padding: 10px 12px;
@@ -128,12 +198,17 @@
             color: var(--text-primary);
             font-size: 0.9rem;
         }
-
+        
         .input-group input:focus, .input-group select:focus {
             outline: none;
             border-color: var(--primary);
         }
-
+        
+        .input-group input:disabled, .input-group select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
         .btn {
             width: 100%;
             padding: 12px;
@@ -144,114 +219,217 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-
+        
         .btn-primary {
             background: var(--primary);
             color: white;
         }
-
+        
         .btn-primary:hover { background: #4a7fef; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 12px;
+            padding: 10px;
+            background: var(--bg-dark);
+            border-radius: 8px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .checkbox-group label {
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        
+        .resource-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .resource-group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 0;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .resource-group-header .icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+        }
+        
+        .resource-group-header .icon.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .resource-group-header h3 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .resource-group-content {
+            margin-left: 8px;
+            border-left: 1px solid var(--border);
+            padding-left: 8px;
+        }
+        
+        .resource-group-content.collapsed {
+            display: none;
+        }
+        
         .resource-list {
             list-style: none;
         }
-
+        
         .resource-item {
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 10px 12px;
-            border-radius: 8px;
+            padding: 8px 10px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+            font-size: 0.9rem;
         }
-
+        
         .resource-item:hover, .resource-item.active {
             background: var(--bg-card-hover);
         }
-
+        
         .resource-item .icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 6px;
+            width: 22px;
+            height: 22px;
+            border-radius: 5px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: bold;
         }
-
+        
         .resource-item .count {
             margin-left: auto;
             background: var(--bg-dark);
             padding: 2px 8px;
             border-radius: 10px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             color: var(--text-secondary);
         }
-
-        /* Main Content */
+        
         .content {
             flex: 1;
             display: flex;
             flex-direction: column;
         }
-
-        /* Stats Bar */
+        
         .stats-bar {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 1rem;
             padding: 1.5rem;
             background: var(--bg-card);
             border-bottom: 1px solid var(--border);
         }
-
+        
         .stat-card {
             background: var(--bg-dark);
             padding: 1rem 1.25rem;
             border-radius: 12px;
             border: 1px solid var(--border);
         }
-
+        
         .stat-card .label {
             font-size: 0.75rem;
             color: var(--text-secondary);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-
+        
         .stat-card .value {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: 700;
             margin: 4px 0;
         }
-
+        
         .stat-card .trend {
             font-size: 0.8rem;
             display: flex;
             align-items: center;
             gap: 4px;
         }
-
+        
         .stat-card .trend.up { color: var(--success); }
         .stat-card .trend.down { color: var(--error); }
-
-        /* 3D Canvas Container */
+        
         .canvas-container {
             flex: 1;
             position: relative;
             background: radial-gradient(ellipse at center, #1a2332 0%, #0f1419 100%);
         }
-
+        
         #three-canvas {
             width: 100%;
             height: 100%;
         }
-
-        /* 3D Controls Overlay */
+        
+        .resource-label {
+            background: rgba(26, 31, 38, 0.95);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 11px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-primary);
+            pointer-events: auto;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .resource-label:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+            transform: scale(1.05);
+        }
+        
+        .resource-label.selected {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .resource-label .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+        
+        .resource-label .status-indicator.running { background: var(--success); }
+        .resource-label .status-indicator.pending { background: var(--warning); }
+        .resource-label .status-indicator.error { background: var(--error); }
+        
         .canvas-controls {
             position: absolute;
             top: 1rem;
@@ -259,7 +437,7 @@
             display: flex;
             gap: 8px;
         }
-
+        
         .canvas-btn {
             width: 40px;
             height: 40px;
@@ -273,63 +451,126 @@
             justify-content: center;
             transition: all 0.2s;
         }
-
+        
         .canvas-btn:hover {
             background: var(--bg-card-hover);
             border-color: var(--primary);
         }
-
-        /* Resource Detail Panel */
+        
         .detail-panel {
             position: absolute;
             bottom: 1rem;
             left: 1rem;
-            right: 1rem;
-            max-height: 200px;
-            background: rgba(26, 31, 38, 0.95);
+            width: 400px;
+            max-height: 250px;
+            background: rgba(26, 31, 38, 0.98);
             border: 1px solid var(--border);
             border-radius: 12px;
             padding: 1rem;
             display: none;
             overflow-y: auto;
         }
-
+        
         .detail-panel.show { display: block; }
-
+        
+        .detail-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border);
+        }
+        
         .detail-panel h3 {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 1rem;
+            font-size: 1rem;
         }
-
+        
         .detail-panel .status-badge {
             padding: 4px 10px;
             border-radius: 12px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
         }
-
+        
         .detail-panel .status-badge.running { background: rgba(63, 185, 80, 0.2); color: var(--success); }
         .detail-panel .status-badge.pending { background: rgba(210, 153, 34, 0.2); color: var(--warning); }
         .detail-panel .status-badge.error { background: rgba(248, 81, 73, 0.2); color: var(--error); }
-
-        .detail-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1rem;
+        
+        .detail-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-end;
         }
 
+        .scale-controls {
+            display:flex;
+            gap:6px;
+            margin-top:4px;
+            width:100%;
+        }
+
+        .scale-btn {
+            flex:1;
+            padding:6px 8px;
+            border-radius:6px;
+            border:1px solid var(--border);
+            background:var(--bg-dark);
+            color:var(--text-primary);
+            font-size:0.75rem;
+            cursor:pointer;
+        }
+
+        .scale-btn:hover {
+            border-color:var(--primary);
+            background:var(--bg-card-hover);
+        }
+        
+        .detail-action-btn {
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .detail-action-btn:hover {
+            border-color: var(--primary);
+            background: var(--bg-card-hover);
+        }
+        
+        .detail-action-btn.danger:hover {
+            border-color: var(--error);
+            color: var(--error);
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+        
         .detail-item {
             font-size: 0.85rem;
         }
-
+        
         .detail-item .key {
             color: var(--text-secondary);
             margin-bottom: 2px;
+            font-size: 0.75rem;
         }
-
-        /* Legend */
+        
         .legend {
             position: absolute;
             top: 1rem;
@@ -339,29 +580,52 @@
             border-radius: 12px;
             padding: 1rem;
         }
-
+        
         .legend h4 {
             font-size: 0.75rem;
             text-transform: uppercase;
             color: var(--text-secondary);
             margin-bottom: 10px;
         }
-
+        
         .legend-item {
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: 0.85rem;
-            margin-bottom: 6px;
+            font-size: 0.8rem;
+            margin-bottom: 5px;
         }
-
+        
         .legend-color {
-            width: 16px;
-            height: 16px;
-            border-radius: 4px;
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
         }
-
-        /* Loading Overlay */
+        
+        .data-mode-badge {
+            position: absolute;
+            top: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 100;
+        }
+        
+        .data-mode-badge.demo {
+            background: rgba(210, 153, 34, 0.2);
+            border: 1px solid var(--warning);
+            color: var(--warning);
+        }
+        
+        .data-mode-badge.live {
+            background: rgba(63, 185, 80, 0.2);
+            border: 1px solid var(--success);
+            color: var(--success);
+        }
+        
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -376,9 +640,9 @@
             flex-direction: column;
             gap: 1rem;
         }
-
+        
         .loading-overlay.show { display: flex; }
-
+        
         .spinner {
             width: 50px;
             height: 50px;
@@ -387,17 +651,320 @@
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-
+        
         @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* Toast Notifications */
+        
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 3000;
+        }
+        
+        .modal-overlay.show { display: flex; }
+        
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-dark);
+        }
+        
+        .modal-header h2 {
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .modal-header .resource-type-badge {
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: var(--primary);
+        }
+        
+        .modal-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-close:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--error);
+            color: var(--error);
+        }
+        
+        .modal-tabs {
+            display: flex;
+            gap: 0;
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .modal-tab {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .modal-tab:hover {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+        
+        .modal-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: var(--bg-card);
+        }
+        
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+        }
+        
+        .tab-content {
+            display: none;
+            height: 100%;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .yaml-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .yaml-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .yaml-toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .yaml-toolbar-btn {
+            padding: 8px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        
+        .yaml-toolbar-btn:hover {
+            border-color: var(--primary);
+            background: var(--bg-card-hover);
+        }
+        
+        .yaml-toolbar-btn.primary {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .yaml-toolbar-btn.primary:hover {
+            background: #4a7fef;
+        }
+        
+        .yaml-editor {
+            flex: 1;
+            background: #0d1117;
+            overflow: auto;
+        }
+        
+        .yaml-editor pre {
+            margin: 0;
+            padding: 16px;
+            font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #c9d1d9;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        
+        .yaml-editor .yaml-key { color: #7ee787; }
+        .yaml-editor .yaml-string { color: #a5d6ff; }
+        .yaml-editor .yaml-number { color: #79c0ff; }
+        .yaml-editor .yaml-boolean { color: #ff7b72; }
+        .yaml-editor .yaml-null { color: #8b949e; }
+        
+        .details-container { padding: 1.5rem; }
+        
+        .details-section { margin-bottom: 1.5rem; }
+        
+        .details-section h4 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        
+        .details-field {
+            background: var(--bg-dark);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .details-field .label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .details-field .value {
+            font-size: 0.9rem;
+            word-break: break-all;
+        }
+        
+        .labels-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .label-tag {
+            padding: 4px 10px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-family: monospace;
+        }
+        
+        .events-container { padding: 1rem; }
+        
+        .event-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 3px solid var(--primary);
+        }
+        
+        .event-item.warning { border-left-color: var(--warning); }
+        .event-item.error { border-left-color: var(--error); }
+        
+        .event-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--bg-card);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+        
+        .event-content { flex: 1; }
+        .event-message { font-size: 0.9rem; margin-bottom: 4px; }
+        .event-meta { font-size: 0.75rem; color: var(--text-secondary); }
+        
+        .logs-container {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .logs-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .logs-output {
+            flex: 1;
+            background: #0d1117;
+            padding: 16px;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
+            font-size: 0.8rem;
+            line-height: 1.5;
+            overflow: auto;
+            color: #8b949e;
+        }
+        
+        .log-line { margin-bottom: 2px; }
+        .log-line .timestamp { color: #6e7681; }
+        .log-line .level-info { color: #58a6ff; }
+        .log-line .level-warn { color: #d29922; }
+        .log-line .level-error { color: #f85149; }
+        .log-line .message { color: #c9d1d9; }
+        
         .toast-container {
             position: fixed;
             bottom: 2rem;
             right: 2rem;
-            z-index: 3000;
+            z-index: 4000;
         }
-
+        
         .toast {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -408,30 +975,57 @@
             align-items: center;
             gap: 10px;
             animation: slideIn 0.3s ease;
+            max-width: 350px;
         }
-
+        
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
         }
-
+        
         .toast.success { border-left: 4px solid var(--success); }
         .toast.error { border-left: 4px solid var(--error); }
         .toast.info { border-left: 4px solid var(--primary); }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+        .toast.warning { border-left: 4px solid var(--warning); }
+        
+        .confirm-modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            width: 400px;
+            text-align: center;
         }
+        
+        .confirm-modal h3 { margin-bottom: 1rem; }
+        .confirm-modal p { color: var(--text-secondary); margin-bottom: 1.5rem; }
+        .confirm-modal .btn-group { display: flex; gap: 12px; justify-content: center; }
+        .confirm-modal .btn { width: auto; padding: 10px 24px; }
+        .confirm-modal .btn-cancel { background: var(--bg-dark); border: 1px solid var(--border); color: var(--text-primary); }
+        .confirm-modal .btn-danger { background: var(--error); color: white; }
 
+        .favorites-group { margin-bottom: 1rem; }
+        .favorites-group-title { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .favorites-list { list-style: none; }
+        .favorite-item { padding: 6px 8px; border-radius: 6px; background: var(--bg-dark); border: 1px solid var(--border); margin-bottom: 4px; cursor: pointer; font-size: 0.85rem; display:flex; justify-content:space-between; align-items:center; }
+        .favorite-item:hover { background: var(--bg-card-hover); border-color: var(--primary); }
+        .favorite-tag { font-size: 0.7rem; color: var(--text-secondary); margin-left:8px; }
+        .favorite-remove { font-size: 0.8rem; color: var(--error); cursor:pointer; margin-left:8px; }
+        
+        @media (max-width: 1200px) {
+            .stats-bar { grid-template-columns: repeat(3, 1fr); }
+            .details-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .stats-bar { grid-template-columns: 1fr; }
+            .details-grid { grid-template-columns: 1fr; }
+            .toggle-container { display: none; }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <div class="logo">
             <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -441,83 +1035,189 @@
             </svg>
             <h1>Kubernetes Dashboard</h1>
         </div>
-        <div class="connection-status">
-            <span class="status-dot" id="statusDot"></span>
-            <span id="statusText">Disconnected</span>
+        <div class="header-actions">
+            <div class="toggle-container">
+                <span class="toggle-label active" id="demoLabel">Demo</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="dataModeToggle" onchange="toggleDataMode()">
+                    <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label" id="liveLabel">Live</span>
+            </div>
+            
+            <div class="connection-status">
+                <span class="status-dot demo" id="statusDot"></span>
+                <span id="statusText">Demo Mode</span>
+            </div>
         </div>
     </header>
-
+    
     <div class="main-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="config-section">
                 <h2>Connection</h2>
                 <div class="input-group">
                     <label>API Server URL</label>
-                    <input type="text" id="apiServer" value="http://localhost:8001" placeholder="http://localhost:8001">
+                    <input type="text" id="apiServer" value="http://localhost:8001" placeholder="http://localhost:8001" disabled>
                 </div>
                 <div class="input-group">
                     <label>Namespace</label>
-                    <select id="namespaceSelect">
+                    <select id="namespaceSelect" disabled>
                         <option value="">All Namespaces</option>
                     </select>
                 </div>
-                <button class="btn btn-primary" id="connectBtn" onclick="connectToCluster()">Connect to Cluster</button>
-                <p style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 10px;">
+                <button class="btn btn-primary" id="connectBtn" onclick="connectToCluster()" disabled>Connect to Cluster</button>
+                <p style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 10px;">
                     Run <code style="background: var(--bg-dark); padding: 2px 6px; border-radius: 4px;">kubectl proxy</code> to enable API access
                 </p>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" id="showLabelsToggle" checked onchange="toggleLabels()">
+                    <label for="showLabelsToggle">Show resource name labels</label>
+                </div>
             </div>
 
             <div class="config-section">
-                <h2>Resources</h2>
-                <ul class="resource-list" id="resourceList">
-                    <li class="resource-item active" data-resource="pods" onclick="selectResource('pods')">
-                        <span class="icon" style="background: #326CE5;">P</span>
-                        <span>Pods</span>
-                        <span class="count" id="podCount">0</span>
-                    </li>
-                    <li class="resource-item" data-resource="deployments" onclick="selectResource('deployments')">
-                        <span class="icon" style="background: #00D4AA;">D</span>
-                        <span>Deployments</span>
-                        <span class="count" id="deploymentCount">0</span>
-                    </li>
-                    <li class="resource-item" data-resource="services" onclick="selectResource('services')">
-                        <span class="icon" style="background: #f85149;">S</span>
-                        <span>Services</span>
-                        <span class="count" id="serviceCount">0</span>
-                    </li>
-                    <li class="resource-item" data-resource="configmaps" onclick="selectResource('configmaps')">
-                        <span class="icon" style="background: #d29922;">C</span>
-                        <span>ConfigMaps</span>
-                        <span class="count" id="configmapCount">0</span>
-                    </li>
-                    <li class="resource-item" data-resource="secrets" onclick="selectResource('secrets')">
-                        <span class="icon" style="background: #8b5cf6;">S</span>
-                        <span>Secrets</span>
-                        <span class="count" id="secretCount">0</span>
-                    </li>
-                    <li class="resource-item" data-resource="namespaces" onclick="selectResource('namespaces')">
-                        <span class="icon" style="background: #ec4899;">N</span>
-                        <span>Namespaces</span>
-                        <span class="count" id="namespaceCount">0</span>
-                    </li>
-                    <li class="resource-item" data-resource="nodes" onclick="selectResource('nodes')">
-                        <span class="icon" style="background: #06b6d4;">N</span>
-                        <span>Nodes</span>
-                        <span class="count" id="nodeCount">0</span>
-                    </li>
-                    <li class="resource-item" data-resource="persistentvolumes" onclick="selectResource('persistentvolumes')">
-                        <span class="icon" style="background: #84cc16;">V</span>
-                        <span>Persistent Volumes</span>
-                        <span class="count" id="pvCount">0</span>
-                    </li>
-                </ul>
+                <h2>Favorites</h2>
+                <div id="favoritesContainer"></div>
+            </div>
+            
+            <div class="resource-group">
+                <div class="resource-group-header" onclick="toggleGroup('workloads')">
+                    <span class="icon" id="workloads-icon">▼</span>
+                    <h3>Workloads</h3>
+                </div>
+                <div class="resource-group-content" id="workloads-content">
+                    <ul class="resource-list">
+                        <li class="resource-item active" data-resource="pods" onclick="selectResource('pods')">
+                            <span class="icon" style="background: #326CE5;">P</span>
+                            <span>Pods</span>
+                            <span class="count" id="podCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="deployments" onclick="selectResource('deployments')">
+                            <span class="icon" style="background: #00D4AA;">D</span>
+                            <span>Deployments</span>
+                            <span class="count" id="deploymentCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="replicasets" onclick="selectResource('replicasets')">
+                            <span class="icon" style="background: #10b981;">R</span>
+                            <span>ReplicaSets</span>
+                            <span class="count" id="replicasetCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="statefulsets" onclick="selectResource('statefulsets')">
+                            <span class="icon" style="background: #6366f1;">S</span>
+                            <span>StatefulSets</span>
+                            <span class="count" id="statefulsetCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="daemonsets" onclick="selectResource('daemonsets')">
+                            <span class="icon" style="background: #8b5cf6;">D</span>
+                            <span>DaemonSets</span>
+                            <span class="count" id="daemonsetCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="jobs" onclick="selectResource('jobs')">
+                            <span class="icon" style="background: #f59e0b;">J</span>
+                            <span>Jobs</span>
+                            <span class="count" id="jobCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="cronjobs" onclick="selectResource('cronjobs')">
+                            <span class="icon" style="background: #ef4444;">C</span>
+                            <span>CronJobs</span>
+                            <span class="count" id="cronjobCount">0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="resource-group">
+                <div class="resource-group-header" onclick="toggleGroup('networking')">
+                    <span class="icon" id="networking-icon">▼</span>
+                    <h3>Networking</h3>
+                </div>
+                <div class="resource-group-content" id="networking-content">
+                    <ul class="resource-list">
+                        <li class="resource-item" data-resource="services" onclick="selectResource('services')">
+                            <span class="icon" style="background: #f85149;">S</span>
+                            <span>Services</span>
+                            <span class="count" id="serviceCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="ingresses" onclick="selectResource('ingresses')">
+                            <span class="icon" style="background: #06b6d4;">I</span>
+                            <span>Ingresses</span>
+                            <span class="count" id="ingressCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="httpproxies" onclick="selectResource('httpproxies')">
+                            <span class="icon" style="background: #f97316;">H</span>
+                            <span>HTTPProxies</span>
+                            <span class="count" id="httpproxyCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="networkpolicies" onclick="selectResource('networkpolicies')">
+                            <span class="icon" style="background: #ec4899;">N</span>
+                            <span>NetworkPolicies</span>
+                            <span class="count" id="networkpolicyCount">0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="resource-group">
+                <div class="resource-group-header" onclick="toggleGroup('config')">
+                    <span class="icon" id="config-icon">▼</span>
+                    <h3>Config & Storage</h3>
+                </div>
+                <div class="resource-group-content" id="config-content">
+                    <ul class="resource-list">
+                        <li class="resource-item" data-resource="configmaps" onclick="selectResource('configmaps')">
+                            <span class="icon" style="background: #d29922;">C</span>
+                            <span>ConfigMaps</span>
+                            <span class="count" id="configmapCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="secrets" onclick="selectResource('secrets')">
+                            <span class="icon" style="background: #8b5cf6;">S</span>
+                            <span>Secrets</span>
+                            <span class="count" id="secretCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="persistentvolumes" onclick="selectResource('persistentvolumes')">
+                            <span class="icon" style="background: #84cc16;">V</span>
+                            <span>PersistentVolumes</span>
+                            <span class="count" id="pvCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="persistentvolumeclaims" onclick="selectResource('persistentvolumeclaims')">
+                            <span class="icon" style="background: #22c55e;">C</span>
+                            <span>PVCs</span>
+                            <span class="count" id="pvcCount">0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="resource-group">
+                <div class="resource-group-header" onclick="toggleGroup('cluster')">
+                    <span class="icon" id="cluster-icon">▼</span>
+                    <h3>Cluster</h3>
+                </div>
+                <div class="resource-group-content" id="cluster-content">
+                    <ul class="resource-list">
+                        <li class="resource-item" data-resource="namespaces" onclick="selectResource('namespaces')">
+                            <span class="icon" style="background: #ec4899;">N</span>
+                            <span>Namespaces</span>
+                            <span class="count" id="namespaceCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="nodes" onclick="selectResource('nodes')">
+                            <span class="icon" style="background: #06b6d4;">N</span>
+                            <span>Nodes</span>
+                            <span class="count" id="nodeCount">0</span>
+                        </li>
+                        <li class="resource-item" data-resource="serviceaccounts" onclick="selectResource('serviceaccounts')">
+                            <span class="icon" style="background: #14b8a6;">A</span>
+                            <span>ServiceAccounts</span>
+                            <span class="count" id="saCount">0</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </aside>
-
-        <!-- Main Content -->
+        
         <main class="content">
-            <!-- Stats Bar -->
             <div class="stats-bar">
                 <div class="stat-card">
                     <div class="label">Total Pods</div>
@@ -539,35 +1239,52 @@
                     <div class="value" id="totalServices">0</div>
                     <div class="trend">Exposed</div>
                 </div>
+                <div class="stat-card">
+                    <div class="label">HTTPProxies</div>
+                    <div class="value" id="totalHttpProxies">0</div>
+                    <div class="trend">Valid</div>
+                </div>
             </div>
-
-            <!-- 3D Canvas -->
+            
             <div class="canvas-container">
                 <div id="three-canvas"></div>
-
-                <!-- Legend -->
-                <div class="legend">
+                
+                <div class="data-mode-badge demo" id="dataModeBadge">📊 Demo Data</div>
+                
+                <div class="legend" id="legendPanel">
                     <h4>Resource Types</h4>
                     <div class="legend-item"><div class="legend-color" style="background: #326CE5;"></div> Pods</div>
                     <div class="legend-item"><div class="legend-color" style="background: #00D4AA;"></div> Deployments</div>
                     <div class="legend-item"><div class="legend-color" style="background: #f85149;"></div> Services</div>
-                    <div class="legend-item"><div class="legend-color" style="background: #d29922;"></div> ConfigMaps</div>
-                    <div class="legend-item"><div class="legend-color" style="background: #8b5cf6;"></div> Namespaces</div>
+                    <div class="legend-item"><div class="legend-color" style="background: #f97316;"></div> HTTPProxies</div>
+                    <div class="legend-item"><div class="legend-color" style="background: #ec4899;"></div> Namespaces</div>
                 </div>
-
-                <!-- Canvas Controls -->
+                
                 <div class="canvas-controls">
                     <button class="canvas-btn" onclick="resetCamera()" title="Reset View">⟲</button>
                     <button class="canvas-btn" onclick="toggleAutoRotate()" title="Auto Rotate">◎</button>
                     <button class="canvas-btn" onclick="refreshVisualization()" title="Refresh">↻</button>
                 </div>
-
-                <!-- Detail Panel -->
+                
                 <div class="detail-panel" id="detailPanel">
-                    <h3>
-                        <span id="detailName">Resource Name</span>
-                        <span class="status-badge running" id="detailStatus">Running</span>
-                    </h3>
+                    <div class="detail-panel-header">
+                        <h3>
+                            <span id="detailName">Resource Name</span>
+                            <span class="status-badge running" id="detailStatus">Running</span>
+                        </h3>
+                        <div class="detail-actions">
+                            <button class="detail-action-btn" onclick="openResourceModal('yaml')" title="View YAML">📄 YAML</button>
+                            <button class="detail-action-btn" onclick="openResourceModal('details')" title="View Details">🔍 Details</button>
+                            <button class="detail-action-btn" onclick="openResourceModal('events')" title="View Events">📋 Events</button>
+                            <button class="detail-action-btn danger" onclick="showDeleteConfirm()" title="Delete">🗑️</button>
+                            <button class="detail-action-btn" id="favoriteToggleBtn" onclick="toggleFavorite()" title="Favorite">☆ Favorite</button>
+                            <div class="scale-controls">
+                                <button class="scale-btn" onclick="scaleResource(0.5)">0.5x</button>
+                                <button class="scale-btn" onclick="scaleResource(1)">1x</button>
+                                <button class="scale-btn" onclick="scaleResource(2)">2x</button>
+                            </div>
+                        </div>
+                    </div>
                     <div class="detail-grid">
                         <div class="detail-item">
                             <div class="key">Namespace</div>
@@ -581,127 +1298,528 @@
                             <div class="key">Created</div>
                             <div id="detailCreated">-</div>
                         </div>
+                        <div class="detail-item">
+                            <div class="key">Age</div>
+                            <div id="detailAge">-</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
-
-    <!-- Loading Overlay -->
+    
+    <div class="modal-overlay" id="resourceModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>
+                    <span id="modalResourceName">nginx-deployment</span>
+                    <span class="resource-type-badge" id="modalResourceType">Deployment</span>
+                </h2>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-tabs">
+                <button class="modal-tab active" onclick="switchTab('yaml')">YAML</button>
+                <button class="modal-tab" onclick="switchTab('details')">Details</button>
+                <button class="modal-tab" onclick="switchTab('events')">Events</button>
+                <button class="modal-tab" onclick="switchTab('logs')" id="logsTab">Logs</button>
+            </div>
+            <div class="modal-body">
+                <div class="tab-content active" id="tab-yaml">
+                    <div class="yaml-container">
+                        <div class="yaml-toolbar">
+                            <div class="yaml-toolbar-left">
+                                <button class="yaml-toolbar-btn" onclick="copyYaml()">📋 Copy</button>
+                                <button class="yaml-toolbar-btn" onclick="downloadYaml()">⬇️ Download</button>
+                            </div>
+                            <div class="yaml-toolbar-right">
+                                <button class="yaml-toolbar-btn primary" onclick="applyYaml()">✓ Apply Changes</button>
+                            </div>
+                        </div>
+                        <div class="yaml-editor" id="yamlEditor">
+                            <pre id="yamlContent"></pre>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tab-content" id="tab-details">
+                    <div class="details-container" id="detailsContent"></div>
+                </div>
+                
+                <div class="tab-content" id="tab-events">
+                    <div class="events-container" id="eventsContent"></div>
+                </div>
+                
+                <div class="tab-content" id="tab-logs">
+                    <div class="logs-container">
+                        <div class="logs-toolbar">
+                            <button class="yaml-toolbar-btn" onclick="refreshLogs()">↻ Refresh</button>
+                            <button class="yaml-toolbar-btn" onclick="downloadLogs()">⬇️ Download</button>
+                            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem;">
+                                <input type="checkbox" id="followLogs"> Follow
+                            </label>
+                        </div>
+                        <div class="logs-output" id="logsOutput"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal-overlay" id="deleteModal">
+        <div class="confirm-modal">
+            <h3>⚠️ Delete Resource</h3>
+            <p>Are you sure you want to delete <strong id="deleteResourceName">nginx-pod</strong>? This action cannot be undone.</p>
+            <div class="btn-group">
+                <button class="btn btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-danger" onclick="deleteResource()">Delete</button>
+            </div>
+        </div>
+    </div>
+    
     <div class="loading-overlay" id="loadingOverlay">
         <div class="spinner"></div>
-        <div>Connecting to cluster...</div>
+        <div id="loadingText">Connecting to cluster...</div>
     </div>
-
-    <!-- Toast Container -->
+    
     <div class="toast-container" id="toastContainer"></div>
 
     <script>
         // Global State
-        let scene, camera, renderer, controls;
+        let scene, camera, renderer, controls, labelRenderer;
         let resourceMeshes = [];
-        let clusterData = {
-            pods: [],
-            deployments: [],
-            services: [],
-            configmaps: [],
-            secrets: [],
-            namespaces: [],
-            nodes: [],
-            persistentvolumes: []
-        };
+        let resourceLabels = [];
+        let clusterData = {};
+        let demoData = {};
         let currentResource = 'pods';
+        let selectedResource = null;
         let isConnected = false;
+        let isDemoMode = true;
         let autoRotate = true;
+        let showLabels = true;
+        let highlightedMesh = null;
 
-        // Resource Colors
+        let favorites = {};
+
+        function loadFavorites() {
+            try {
+                const raw = localStorage.getItem('kube3dFavorites');
+                favorites = raw ? JSON.parse(raw) : {};
+            } catch(e) {
+                favorites = {};
+            }
+            renderFavorites();
+        }
+
+        function saveFavorites() {
+            localStorage.setItem('kube3dFavorites', JSON.stringify(favorites));
+        }
+
+        function getFavoriteKey(res) {
+            return (res.namespace || 'N/A') + '::' + res.type + '::' + res.name;
+        }
+
+        function isFavorite(res) {
+            return !!favorites[getFavoriteKey(res)];
+        }
+
+        function toggleFavorite() {
+            if (!selectedResource) return;
+            const key = getFavoriteKey(selectedResource);
+            if (favorites[key]) {
+                delete favorites[key];
+                showToast('Removed from favorites', 'info');
+            } else {
+                favorites[key] = {
+                    name: selectedResource.name,
+                    namespace: selectedResource.namespace,
+                    type: selectedResource.type
+                };
+                showToast('Added to favorites', 'success');
+            }
+            saveFavorites();
+            renderFavorites();
+            updateFavoriteButton();
+        }
+
+        function updateFavoriteButton() {
+            const btn = document.getElementById('favoriteToggleBtn');
+            if (!btn || !selectedResource) return;
+            if (isFavorite(selectedResource)) {
+                btn.textContent = '★ Favorited';
+            } else {
+                btn.textContent = '☆ Favorite';
+            }
+        }
+
+        function renderFavorites() {
+            const container = document.getElementById('favoritesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            const byType = {};
+            Object.values(favorites).forEach(f => {
+                if (!byType[f.type]) byType[f.type] = [];
+                byType[f.type].push(f);
+            });
+            const types = Object.keys(byType).sort();
+            types.forEach(t => {
+                const group = document.createElement('div');
+                group.className = 'favorites-group';
+                const title = document.createElement('div');
+                title.className = 'favorites-group-title';
+                title.textContent = t.charAt(0).toUpperCase() + t.slice(1);
+                group.appendChild(title);
+                const ul = document.createElement('ul');
+                ul.className = 'favorites-list';
+                byType[t].forEach(f => {
+                    const li = document.createElement('li');
+                    li.className = 'favorite-item';
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = f.name;
+                    const nsSpan = document.createElement('span');
+                    nsSpan.className = 'favorite-tag';
+                    nsSpan.textContent = f.namespace;
+                    li.appendChild(nameSpan);
+                    li.appendChild(nsSpan);
+                    li.onclick = function() { navigateToFavorite(f); };
+                    const remove = document.createElement('span');
+                    remove.className = 'favorite-remove';
+                    remove.textContent = '×';
+                    remove.onclick = function(ev) {
+                        ev.stopPropagation();
+                        removeFavorite(f);
+                    };
+                    li.appendChild(remove);
+                    ul.appendChild(li);
+                });
+                group.appendChild(ul);
+                container.appendChild(group);
+            });
+        }
+
+        function removeFavorite(f) {
+            const key = (f.namespace || 'N/A') + '::' + f.type + '::' + f.name;
+            delete favorites[key];
+            saveFavorites();
+            renderFavorites();
+            updateFavoriteButton();
+        }
+
+        function navigateToFavorite(f) {
+            const list = clusterData[f.type] || [];
+            const res = list.find(r =>
+                r.metadata &&
+                r.metadata.name === f.name &&
+                (r.metadata.namespace || 'N/A') === f.namespace
+            );
+            if (!res) {
+                showToast('Resource not found in current data', 'warning');
+                return;
+            }
+
+            if (currentResource !== f.type) {
+                selectResource(f.type);
+            } else {
+                visualizeResources(f.type);
+            }
+
+            const mesh = resourceMeshes.find(m =>
+                m.type === 'Mesh' &&
+                m.userData &&
+                m.userData.name === f.name &&
+                m.userData.namespace === f.namespace
+            );
+            if (mesh) {
+                selectedResource = mesh.userData;
+                showResourceDetails(mesh.userData);
+                highlightMesh(mesh);
+                updateLabelSelection(mesh.userData.name);
+            }
+        }
+
+        function scaleResource(factor) {
+            if (!selectedResource) return;
+            const mesh = resourceMeshes.find(m =>
+                m.type === 'Mesh' &&
+                m.userData &&
+                m.userData.name === selectedResource.name &&
+                m.userData.namespace === selectedResource.namespace
+            );
+            if (!mesh) return;
+            mesh.scale.set(factor, factor, factor);
+            highlightedMesh = mesh;
+        }
+        
         const COLORS = {
             pods: 0x326CE5,
             deployments: 0x00D4AA,
+            replicasets: 0x10b981,
+            statefulsets: 0x6366f1,
+            daemonsets: 0x8b5cf6,
+            jobs: 0xf59e0b,
+            cronjobs: 0xef4444,
             services: 0xf85149,
+            ingresses: 0x06b6d4,
+            httpproxies: 0xf97316,
+            networkpolicies: 0xec4899,
             configmaps: 0xd29922,
             secrets: 0x8b5cf6,
+            persistentvolumes: 0x84cc16,
+            persistentvolumeclaims: 0x22c55e,
             namespaces: 0xec4899,
             nodes: 0x06b6d4,
-            persistentvolumes: 0x84cc16
+            serviceaccounts: 0x14b8a6
         };
-
-        // Initialize Three.js Scene
+        
+        const resourceTypes = Object.keys(COLORS);
+        resourceTypes.forEach(type => { clusterData[type] = []; });
+        
+        // Initialize Demo Data
+        function initDemoData() {
+            const timestamp = new Date().toISOString();
+            
+            demoData = {
+                pods: [
+                    { apiVersion: 'v1', kind: 'Pod', metadata: { name: 'nginx-pod-7d5b4', namespace: 'default', uid: 'abc-123-def', creationTimestamp: timestamp, labels: { app: 'nginx', tier: 'frontend' }, resourceVersion: '12345', generation: 1 }, spec: { containers: [{ name: 'nginx', image: 'nginx:1.21', ports: [{ containerPort: 80 }] }], nodeName: 'node-1' }, status: { phase: 'Running', podIP: '10.244.0.5' } },
+                    { apiVersion: 'v1', kind: 'Pod', metadata: { name: 'redis-pod-8e6c2', namespace: 'default', uid: 'abc-124-def', creationTimestamp: timestamp, labels: { app: 'redis', tier: 'cache' }, resourceVersion: '12346' }, spec: { containers: [{ name: 'redis', image: 'redis:6.2' }] }, status: { phase: 'Running', podIP: '10.244.0.6' } },
+                    { apiVersion: 'v1', kind: 'Pod', metadata: { name: 'api-server-5f7b3', namespace: 'production', uid: 'abc-125-def', creationTimestamp: timestamp, labels: { app: 'api', version: 'v2' }, resourceVersion: '12347' }, spec: { containers: [{ name: 'api', image: 'myapi:v2.1.0' }] }, status: { phase: 'Running', podIP: '10.244.1.10' } },
+                    { apiVersion: 'v1', kind: 'Pod', metadata: { name: 'worker-pod-3a9d1', namespace: 'production', uid: 'abc-126-def', creationTimestamp: timestamp, labels: { app: 'worker' }, resourceVersion: '12348' }, spec: { containers: [{ name: 'worker', image: 'worker:latest' }] }, status: { phase: 'Pending' } },
+                    { apiVersion: 'v1', kind: 'Pod', metadata: { name: 'postgres-0', namespace: 'database', uid: 'abc-127-def', creationTimestamp: timestamp, labels: { app: 'postgres' }, resourceVersion: '12349' }, spec: { containers: [{ name: 'postgres', image: 'postgres:14' }] }, status: { phase: 'Running', podIP: '10.244.2.5' } },
+                    { apiVersion: 'v1', kind: 'Pod', metadata: { name: 'failed-job-xyz', namespace: 'default', uid: 'abc-128-def', creationTimestamp: timestamp, labels: { job: 'backup' }, resourceVersion: '12350' }, spec: { containers: [{ name: 'backup', image: 'backup:v1' }] }, status: { phase: 'Failed' } },
+                ],
+                deployments: [
+                    { apiVersion: 'apps/v1', kind: 'Deployment', metadata: { name: 'nginx-deployment', namespace: 'default', uid: 'dep-001', creationTimestamp: timestamp, labels: { app: 'nginx' }, resourceVersion: '23456', generation: 3 }, spec: { replicas: 3 }, status: { replicas: 3, availableReplicas: 3, readyReplicas: 3 } },
+                    { apiVersion: 'apps/v1', kind: 'Deployment', metadata: { name: 'api-deployment', namespace: 'production', uid: 'dep-002', creationTimestamp: timestamp, labels: { app: 'api' }, resourceVersion: '23457', generation: 5 }, spec: { replicas: 2 }, status: { replicas: 2, availableReplicas: 2, readyReplicas: 2 } },
+                    { apiVersion: 'apps/v1', kind: 'Deployment', metadata: { name: 'frontend-deployment', namespace: 'production', uid: 'dep-003', creationTimestamp: timestamp, labels: { app: 'frontend' }, resourceVersion: '23458' }, spec: { replicas: 4 }, status: { replicas: 4, availableReplicas: 3, readyReplicas: 3 } },
+                ],
+                replicasets: [
+                    { apiVersion: 'apps/v1', kind: 'ReplicaSet', metadata: { name: 'nginx-deployment-5d4b7', namespace: 'default', uid: 'rs-001', creationTimestamp: timestamp }, spec: { replicas: 3 }, status: { replicas: 3, availableReplicas: 3 } },
+                ],
+                statefulsets: [
+                    { apiVersion: 'apps/v1', kind: 'StatefulSet', metadata: { name: 'postgres', namespace: 'database', uid: 'sts-001', creationTimestamp: timestamp }, spec: { replicas: 3, serviceName: 'postgres' }, status: { replicas: 3, readyReplicas: 3 } },
+                ],
+                daemonsets: [
+                    { apiVersion: 'apps/v1', kind: 'DaemonSet', metadata: { name: 'fluentd', namespace: 'kube-system', uid: 'ds-001', creationTimestamp: timestamp }, spec: {}, status: { numberReady: 3, desiredNumberScheduled: 3 } },
+                ],
+                jobs: [
+                    { apiVersion: 'batch/v1', kind: 'Job', metadata: { name: 'db-migration', namespace: 'production', uid: 'job-001', creationTimestamp: timestamp }, spec: {}, status: { succeeded: 1 } },
+                ],
+                cronjobs: [
+                    { apiVersion: 'batch/v1', kind: 'CronJob', metadata: { name: 'backup-job', namespace: 'database', uid: 'cj-001', creationTimestamp: timestamp }, spec: { schedule: '0 2 * * *' }, status: {} },
+                ],
+                services: [
+                    { apiVersion: 'v1', kind: 'Service', metadata: { name: 'nginx-service', namespace: 'default', uid: 'svc-001', creationTimestamp: timestamp, labels: { app: 'nginx' } }, spec: { type: 'ClusterIP', ports: [{ port: 80, targetPort: 80 }] }, status: {} },
+                    { apiVersion: 'v1', kind: 'Service', metadata: { name: 'api-service', namespace: 'production', uid: 'svc-002', creationTimestamp: timestamp }, spec: { type: 'LoadBalancer', ports: [{ port: 443, targetPort: 8080 }] }, status: { loadBalancer: { ingress: [{ ip: '34.123.45.67' }] } } },
+                    { apiVersion: 'v1', kind: 'Service', metadata: { name: 'postgres-service', namespace: 'database', uid: 'svc-003', creationTimestamp: timestamp }, spec: { type: 'ClusterIP', ports: [{ port: 5432 }] }, status: {} },
+                ],
+                ingresses: [
+                    { apiVersion: 'networking.k8s.io/v1', kind: 'Ingress', metadata: { name: 'main-ingress', namespace: 'production', uid: 'ing-001', creationTimestamp: timestamp }, spec: { rules: [{ host: 'api.example.com' }] }, status: {} },
+                ],
+                httpproxies: [
+                    { apiVersion: 'projectcontour.io/v1', kind: 'HTTPProxy', metadata: { name: 'api-proxy', namespace: 'production', uid: 'hp-001', creationTimestamp: timestamp, labels: { app: 'api' } }, spec: { virtualhost: { fqdn: 'api.mycompany.com' } }, status: { currentStatus: 'valid', description: 'Valid HTTPProxy' } },
+                    { apiVersion: 'projectcontour.io/v1', kind: 'HTTPProxy', metadata: { name: 'frontend-proxy', namespace: 'production', uid: 'hp-002', creationTimestamp: timestamp, labels: { app: 'frontend' } }, spec: { virtualhost: { fqdn: 'app.mycompany.com' } }, status: { currentStatus: 'valid', description: 'Valid HTTPProxy' } },
+                    { apiVersion: 'projectcontour.io/v1', kind: 'HTTPProxy', metadata: { name: 'broken-proxy', namespace: 'default', uid: 'hp-003', creationTimestamp: timestamp }, spec: { virtualhost: { fqdn: 'broken.example.com' } }, status: { currentStatus: 'invalid', description: 'Service not found' } },
+                ],
+                networkpolicies: [
+                    { apiVersion: 'networking.k8s.io/v1', kind: 'NetworkPolicy', metadata: { name: 'deny-all', namespace: 'production', uid: 'np-001', creationTimestamp: timestamp }, spec: { podSelector: {}, policyTypes: ['Ingress', 'Egress'] }, status: {} },
+                ],
+                configmaps: [
+                    { apiVersion: 'v1', kind: 'ConfigMap', metadata: { name: 'app-config', namespace: 'default', uid: 'cm-001', creationTimestamp: timestamp }, data: { 'app.properties': 'key=value' } },
+                    { apiVersion: 'v1', kind: 'ConfigMap', metadata: { name: 'nginx-config', namespace: 'default', uid: 'cm-002', creationTimestamp: timestamp }, data: { 'nginx.conf': 'server { ... }' } },
+                ],
+                secrets: [
+                    { apiVersion: 'v1', kind: 'Secret', metadata: { name: 'db-credentials', namespace: 'database', uid: 'sec-001', creationTimestamp: timestamp }, type: 'Opaque', data: { username: 'YWRtaW4=', password: '********' } },
+                    { apiVersion: 'v1', kind: 'Secret', metadata: { name: 'api-tls', namespace: 'production', uid: 'sec-002', creationTimestamp: timestamp }, type: 'kubernetes.io/tls', data: {} },
+                ],
+                persistentvolumes: [
+                    { apiVersion: 'v1', kind: 'PersistentVolume', metadata: { name: 'pv-storage-001', uid: 'pv-001', creationTimestamp: timestamp }, spec: { capacity: { storage: '10Gi' }, accessModes: ['ReadWriteOnce'] }, status: { phase: 'Bound' } },
+                ],
+                persistentvolumeclaims: [
+                    { apiVersion: 'v1', kind: 'PersistentVolumeClaim', metadata: { name: 'postgres-data', namespace: 'database', uid: 'pvc-001', creationTimestamp: timestamp }, spec: { accessModes: ['ReadWriteOnce'] }, status: { phase: 'Bound' } },
+                ],
+                namespaces: [
+                    { apiVersion: 'v1', kind: 'Namespace', metadata: { name: 'default', uid: 'ns-001', creationTimestamp: timestamp }, status: { phase: 'Active' } },
+                    { apiVersion: 'v1', kind: 'Namespace', metadata: { name: 'production', uid: 'ns-002', creationTimestamp: timestamp, labels: { environment: 'prod' } }, status: { phase: 'Active' } },
+                    { apiVersion: 'v1', kind: 'Namespace', metadata: { name: 'database', uid: 'ns-003', creationTimestamp: timestamp }, status: { phase: 'Active' } },
+                    { apiVersion: 'v1', kind: 'Namespace', metadata: { name: 'kube-system', uid: 'ns-004', creationTimestamp: timestamp }, status: { phase: 'Active' } },
+                ],
+                nodes: [
+                    { apiVersion: 'v1', kind: 'Node', metadata: { name: 'node-1', uid: 'node-001', creationTimestamp: timestamp, labels: { 'kubernetes.io/hostname': 'node-1' } }, spec: {}, status: { conditions: [{ type: 'Ready', status: 'True' }], capacity: { cpu: '4', memory: '16Gi' } } },
+                    { apiVersion: 'v1', kind: 'Node', metadata: { name: 'node-2', uid: 'node-002', creationTimestamp: timestamp, labels: { 'kubernetes.io/hostname': 'node-2' } }, spec: {}, status: { conditions: [{ type: 'Ready', status: 'True' }], capacity: { cpu: '4', memory: '16Gi' } } },
+                    { apiVersion: 'v1', kind: 'Node', metadata: { name: 'node-3', uid: 'node-003', creationTimestamp: timestamp }, spec: {}, status: { conditions: [{ type: 'Ready', status: 'False' }] } },
+                ],
+                serviceaccounts: [
+                    { apiVersion: 'v1', kind: 'ServiceAccount', metadata: { name: 'default', namespace: 'default', uid: 'sa-001', creationTimestamp: timestamp }, secrets: [{ name: 'default-token-xyz' }] },
+                    { apiVersion: 'v1', kind: 'ServiceAccount', metadata: { name: 'api-service-account', namespace: 'production', uid: 'sa-002', creationTimestamp: timestamp }, secrets: [] },
+                ]
+            };
+        }
+        
+        function toggleDataMode() {
+            const toggle = document.getElementById('dataModeToggle');
+            isDemoMode = !toggle.checked;
+            
+            const demoLabel = document.getElementById('demoLabel');
+            const liveLabel = document.getElementById('liveLabel');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            const dataModeBadge = document.getElementById('dataModeBadge');
+            const apiServer = document.getElementById('apiServer');
+            const namespaceSelect = document.getElementById('namespaceSelect');
+            const connectBtn = document.getElementById('connectBtn');
+            
+            if (isDemoMode) {
+                demoLabel.classList.add('active');
+                liveLabel.classList.remove('active');
+                statusDot.className = 'status-dot demo';
+                statusText.textContent = 'Demo Mode';
+                dataModeBadge.className = 'data-mode-badge demo';
+                dataModeBadge.textContent = '📊 Demo Data';
+                apiServer.disabled = true;
+                namespaceSelect.disabled = true;
+                connectBtn.disabled = true;
+                
+                loadDemoData();
+                showToast('Switched to Demo Mode', 'info');
+            } else {
+                demoLabel.classList.remove('active');
+                liveLabel.classList.add('active');
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'Disconnected';
+                dataModeBadge.className = 'data-mode-badge live';
+                dataModeBadge.textContent = '🔴 Not Connected';
+                apiServer.disabled = false;
+                namespaceSelect.disabled = false;
+                connectBtn.disabled = false;
+                
+                resourceTypes.forEach(type => { clusterData[type] = []; });
+                updateResourceCounts();
+                updateStats();
+                clearResourceMeshes();
+                
+                showToast('Switched to Live Mode - Click Connect to fetch real data', 'warning');
+            }
+        }
+        
+        function loadDemoData() {
+            resourceTypes.forEach(type => {
+                clusterData[type] = demoData[type] ? [...demoData[type]] : [];
+            });
+            
+            updateResourceCounts();
+            updateStats();
+            visualizeResources(currentResource);
+        }
+        
+        function toggleLabels() {
+            showLabels = document.getElementById('showLabelsToggle').checked;
+            resourceLabels.forEach(labelObj => {
+                if (labelObj.element) {
+                    labelObj.element.style.display = showLabels ? 'block' : 'none';
+                }
+            });
+        }
+        
+        function toggleGroup(groupId) {
+            const content = document.getElementById(`${groupId}-content`);
+            const icon = document.getElementById(`${groupId}-icon`);
+            content.classList.toggle('collapsed');
+            icon.classList.toggle('collapsed');
+        }
+        
         function initThreeJS() {
             const container = document.getElementById('three-canvas');
             const width = container.clientWidth;
             const height = container.clientHeight;
-
-            // Scene
+            
             scene = new THREE.Scene();
-            scene.fog = new THREE.FogExp2(0x0f1419, 0.02);
-
-            // Camera
+            scene.fog = new THREE.FogExp2(0x0f1419, 0.015);
+            
             camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
-            camera.position.set(0, 20, 40);
-
-            // Renderer
+            camera.position.set(0, 25, 45);
+            
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(width, height);
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
-
-            // Controls
+            
+            labelRenderer = new THREE.CSS2DRenderer();
+            labelRenderer.setSize(width, height);
+            labelRenderer.domElement.style.position = 'absolute';
+            labelRenderer.domElement.style.top = '0';
+            labelRenderer.domElement.style.pointerEvents = 'none';
+            container.appendChild(labelRenderer.domElement);
+            
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.autoRotate = autoRotate;
             controls.autoRotateSpeed = 0.5;
-
-            // Lights
+            
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
             scene.add(ambientLight);
-
+            
             const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
             directionalLight.position.set(10, 20, 10);
             scene.add(directionalLight);
-
+            
             const pointLight = new THREE.PointLight(0x326CE5, 0.5, 100);
             pointLight.position.set(-10, 10, -10);
             scene.add(pointLight);
-
-            // Grid
+            
             const gridHelper = new THREE.GridHelper(100, 50, 0x30363d, 0x1a1f26);
             scene.add(gridHelper);
-
-            // Central Hub (Cluster)
+            
             createClusterHub();
-
-            // Particle Background
             createParticleBackground();
-
-            // Handle Resize
+            
             window.addEventListener('resize', onWindowResize);
-
-            // Raycaster for interactions
+            
             const raycaster = new THREE.Raycaster();
             const mouse = new THREE.Vector2();
-
+            
             renderer.domElement.addEventListener('click', (event) => {
                 const rect = renderer.domElement.getBoundingClientRect();
                 mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
                 mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-
+                
                 raycaster.setFromCamera(mouse, camera);
-                const intersects = raycaster.intersectObjects(resourceMeshes);
-
+                const meshes = resourceMeshes.filter(m => m.type === 'Mesh');
+                const intersects = raycaster.intersectObjects(meshes);
+                
                 if (intersects.length > 0) {
                     const mesh = intersects[0].object;
+                    selectedResource = mesh.userData;
                     showResourceDetails(mesh.userData);
+                    highlightMesh(mesh);
+                    updateLabelSelection(mesh.userData.name);
                 }
             });
-
-            // Animation Loop
+            
             animate();
         }
-
+        
+        function highlightMesh(mesh) {
+            if (highlightedMesh && highlightedMesh !== mesh) {
+                highlightedMesh.material.emissiveIntensity = 0.2;
+                highlightedMesh.scale.set(1, 1, 1);
+            }
+            mesh.material.emissiveIntensity = 0.6;
+            highlightedMesh = mesh;
+        }
+        
+        function updateLabelSelection(selectedName) {
+            resourceLabels.forEach(labelObj => {
+                if (labelObj.element) {
+                    if (labelObj.name === selectedName) {
+                        labelObj.element.classList.add('selected');
+                    } else {
+                        labelObj.element.classList.remove('selected');
+                    }
+                }
+            });
+        }
+        
         function createClusterHub() {
-            // Central glowing sphere representing the cluster
             const geometry = new THREE.IcosahedronGeometry(3, 2);
             const material = new THREE.MeshPhongMaterial({
                 color: 0x326CE5,
@@ -714,84 +1832,105 @@
             const hub = new THREE.Mesh(geometry, material);
             hub.userData = { type: 'cluster', name: 'Kubernetes Cluster' };
             scene.add(hub);
-
-            // Outer ring
+            
             const ringGeometry = new THREE.TorusGeometry(5, 0.1, 16, 100);
             const ringMaterial = new THREE.MeshBasicMaterial({ color: 0x326CE5, transparent: true, opacity: 0.5 });
             const ring = new THREE.Mesh(ringGeometry, ringMaterial);
             ring.rotation.x = Math.PI / 2;
             scene.add(ring);
         }
-
+        
         function createParticleBackground() {
             const particleCount = 500;
             const geometry = new THREE.BufferGeometry();
             const positions = new Float32Array(particleCount * 3);
-
+            
             for (let i = 0; i < particleCount * 3; i += 3) {
                 positions[i] = (Math.random() - 0.5) * 200;
                 positions[i + 1] = (Math.random() - 0.5) * 200;
                 positions[i + 2] = (Math.random() - 0.5) * 200;
             }
-
+            
             geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
+            
             const material = new THREE.PointsMaterial({
                 color: 0x326CE5,
                 size: 0.5,
                 transparent: true,
                 opacity: 0.6
             });
-
+            
             const particles = new THREE.Points(geometry, material);
             scene.add(particles);
         }
-
+        
+        function createResourceLabel(resource, mesh) {
+            const status = resource.status?.phase || resource.status?.currentStatus || resource.status?.conditions?.[0]?.status || 'Unknown';
+            let statusClass = 'running';
+            if (status === 'Pending') statusClass = 'pending';
+            else if (status === 'Failed' || status === 'Error' || status === 'invalid' || status === 'False') statusClass = 'error';
+            else if (status !== 'Running' && status !== 'Active' && status !== 'True' && status !== 'Available' && status !== 'valid' && status !== 'Bound') statusClass = 'pending';
+            
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'resource-label';
+            labelDiv.innerHTML = '<span class="status-indicator ' + statusClass + '"></span>' + (resource.metadata?.name || 'Unknown');
+            labelDiv.style.pointerEvents = 'auto';
+            
+            labelDiv.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectedResource = mesh.userData;
+                showResourceDetails(mesh.userData);
+                highlightMesh(mesh);
+                updateLabelSelection(mesh.userData.name);
+            });
+            
+            const label = new THREE.CSS2DObject(labelDiv);
+            label.position.set(0, 2.5, 0);
+            mesh.add(label);
+            
+            if (!showLabels) {
+                labelDiv.style.display = 'none';
+            }
+            
+            resourceLabels.push({ element: labelDiv, name: resource.metadata?.name });
+        }
+        
         function createResourceMesh(resource, index, total, resourceType) {
             let geometry;
             const color = COLORS[resourceType] || 0x326CE5;
-
-            // Different shapes for different resources
+            
             switch(resourceType) {
-                case 'pods':
-                    geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-                    break;
-                case 'deployments':
-                    geometry = new THREE.CylinderGeometry(0.8, 0.8, 2, 6);
-                    break;
-                case 'services':
-                    geometry = new THREE.SphereGeometry(1, 16, 16);
-                    break;
-                case 'configmaps':
-                    geometry = new THREE.OctahedronGeometry(1);
-                    break;
-                case 'secrets':
-                    geometry = new THREE.TetrahedronGeometry(1.2);
-                    break;
-                case 'namespaces':
-                    geometry = new THREE.TorusGeometry(1, 0.3, 16, 50);
-                    break;
-                case 'nodes':
-                    geometry = new THREE.DodecahedronGeometry(1.2);
-                    break;
+                case 'pods': geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5); break;
+                case 'deployments': geometry = new THREE.CylinderGeometry(0.8, 0.8, 2, 6); break;
+                case 'replicasets': geometry = new THREE.CylinderGeometry(0.6, 0.9, 1.8, 8); break;
+                case 'statefulsets': geometry = new THREE.BoxGeometry(1.2, 2, 1.2); break;
+                case 'daemonsets': geometry = new THREE.OctahedronGeometry(1.2); break;
+                case 'jobs': geometry = new THREE.ConeGeometry(0.8, 1.8, 4); break;
+                case 'cronjobs': geometry = new THREE.TorusKnotGeometry(0.6, 0.2, 64, 8); break;
+                case 'services': geometry = new THREE.SphereGeometry(1, 16, 16); break;
+                case 'ingresses': geometry = new THREE.TorusGeometry(0.8, 0.3, 8, 24); break;
+                case 'httpproxies': geometry = new THREE.DodecahedronGeometry(1.1); break;
+                case 'networkpolicies': geometry = new THREE.IcosahedronGeometry(0.9); break;
+                case 'configmaps': geometry = new THREE.OctahedronGeometry(1); break;
+                case 'secrets': geometry = new THREE.TetrahedronGeometry(1.2); break;
+                case 'namespaces': geometry = new THREE.TorusGeometry(1.2, 0.35, 16, 50); break;
+                case 'nodes': geometry = new THREE.DodecahedronGeometry(1.4); break;
                 case 'persistentvolumes':
-                    geometry = new THREE.ConeGeometry(1, 2, 8);
-                    break;
-                default:
-                    geometry = new THREE.BoxGeometry(1, 1, 1);
+                case 'persistentvolumeclaims': geometry = new THREE.CylinderGeometry(1, 1, 1.5, 32); break;
+                case 'serviceaccounts': geometry = new THREE.ConeGeometry(0.8, 1.5, 6); break;
+                default: geometry = new THREE.BoxGeometry(1, 1, 1);
             }
-
-            // Determine status color
+            
             let statusColor = color;
-            const status = resource.status?.phase || resource.status?.conditions?.[0]?.status || 'Unknown';
-            if (status === 'Running' || status === 'Active' || status === 'True' || status === 'Available') {
+            const status = resource.status?.phase || resource.status?.currentStatus || resource.status?.conditions?.[0]?.status || 'Unknown';
+            if (status === 'Running' || status === 'Active' || status === 'True' || status === 'Available' || status === 'valid' || status === 'Bound') {
                 statusColor = 0x3fb950;
             } else if (status === 'Pending') {
                 statusColor = 0xd29922;
-            } else if (status === 'Failed' || status === 'Error') {
+            } else if (status === 'Failed' || status === 'Error' || status === 'invalid' || status === 'False') {
                 statusColor = 0xf85149;
             }
-
+            
             const material = new THREE.MeshPhongMaterial({
                 color: color,
                 emissive: statusColor,
@@ -799,314 +1938,553 @@
                 transparent: true,
                 opacity: 0.9
             });
-
+            
             const mesh = new THREE.Mesh(geometry, material);
-
-            // Position in a spiral pattern around the hub
+            
             const angle = (index / total) * Math.PI * 2;
             const radius = 12 + (index % 3) * 4;
             const height = Math.sin(index * 0.5) * 3;
-
+            
             mesh.position.x = Math.cos(angle) * radius;
             mesh.position.y = height;
             mesh.position.z = Math.sin(angle) * radius;
-
+            
             mesh.userData = {
                 type: resourceType,
                 name: resource.metadata?.name || 'Unknown',
                 namespace: resource.metadata?.namespace || 'N/A',
                 status: status,
                 created: resource.metadata?.creationTimestamp || 'Unknown',
+                labels: resource.metadata?.labels || {},
+                annotations: resource.metadata?.annotations || {},
                 data: resource
             };
-
+            
             scene.add(mesh);
             resourceMeshes.push(mesh);
-
-            // Connection line to hub
+            
+            createResourceLabel(resource, mesh);
+            
             const lineGeometry = new THREE.BufferGeometry().setFromPoints([
                 new THREE.Vector3(0, 0, 0),
                 mesh.position
             ]);
-            const lineMaterial = new THREE.LineBasicMaterial({ 
-                color: color, 
-                transparent: true, 
-                opacity: 0.2 
-            });
+            const lineMaterial = new THREE.LineBasicMaterial({ color: color, transparent: true, opacity: 0.2 });
             const line = new THREE.Line(lineGeometry, lineMaterial);
             scene.add(line);
             resourceMeshes.push(line);
         }
-
+        
         function clearResourceMeshes() {
-            resourceMeshes.forEach(mesh => scene.remove(mesh));
+            resourceMeshes.forEach(mesh => {
+                if (mesh.children) {
+                    mesh.children.forEach(child => {
+                        if (child instanceof THREE.CSS2DObject) {
+                            mesh.remove(child);
+                        }
+                    });
+                }
+                scene.remove(mesh);
+            });
             resourceMeshes = [];
+            resourceLabels = [];
+            highlightedMesh = null;
         }
-
+        
         function visualizeResources(resourceType) {
             clearResourceMeshes();
             const resources = clusterData[resourceType] || [];
             resources.forEach((resource, index) => {
                 createResourceMesh(resource, index, resources.length, resourceType);
             });
+            updateLegend(resourceType);
         }
-
+        
+        function updateLegend(resourceType) {
+            const legend = document.getElementById('legendPanel');
+            const color = COLORS[resourceType];
+            const colorHex = '#' + color.toString(16).padStart(6, '0');
+            
+            legend.innerHTML = '<h4>Current View: ' + resourceType + '</h4>' +
+                '<div class="legend-item"><div class="legend-color" style="background: ' + colorHex + ';"></div> ' + resourceType + '</div>' +
+                '<div class="legend-item"><div class="legend-color" style="background: #3fb950;"></div> Running/Active</div>' +
+                '<div class="legend-item"><div class="legend-color" style="background: #d29922;"></div> Pending</div>' +
+                '<div class="legend-item"><div class="legend-color" style="background: #f85149;"></div> Error/Failed</div>';
+        }
+        
         function onWindowResize() {
             const container = document.getElementById('three-canvas');
             const width = container.clientWidth;
             const height = container.clientHeight;
-
+            
             camera.aspect = width / height;
             camera.updateProjectionMatrix();
             renderer.setSize(width, height);
+            labelRenderer.setSize(width, height);
         }
-
+        
         function animate() {
             requestAnimationFrame(animate);
-
-            // Animate resource meshes
+            
             resourceMeshes.forEach((mesh, i) => {
-                if (mesh.type === 'Mesh') {
+                if (mesh.type === 'Mesh' && mesh !== highlightedMesh) {
                     mesh.rotation.y += 0.005;
                     mesh.position.y += Math.sin(Date.now() * 0.001 + i) * 0.002;
                 }
             });
-
+            
+            if (highlightedMesh) {
+                highlightedMesh.rotation.y += 0.02;
+            }
+            
             controls.update();
             renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
         }
-
+        
         function resetCamera() {
-            camera.position.set(0, 20, 40);
+            camera.position.set(0, 25, 45);
             controls.target.set(0, 0, 0);
         }
-
+        
         function toggleAutoRotate() {
             autoRotate = !autoRotate;
             controls.autoRotate = autoRotate;
             showToast(autoRotate ? 'Auto-rotate enabled' : 'Auto-rotate disabled', 'info');
         }
-
-        // Kubernetes API Functions
-        async function connectToCluster() {
-            const apiServer = document.getElementById('apiServer').value;
-            showLoading(true);
-
-            try {
-                // Test connection by fetching namespaces
-                const response = await fetch(`${apiServer}/api/v1/namespaces`);
-                if (!response.ok) throw new Error('Connection failed');
-
-                const data = await response.json();
-                clusterData.namespaces = data.items || [];
-
-                // Populate namespace dropdown
-                const select = document.getElementById('namespaceSelect');
-                select.innerHTML = '<option value="">All Namespaces</option>';
-                clusterData.namespaces.forEach(ns => {
-                    const option = document.createElement('option');
-                    option.value = ns.metadata.name;
-                    option.textContent = ns.metadata.name;
-                    select.appendChild(option);
-                });
-
-                // Fetch all resources
-                await fetchAllResources(apiServer);
-
-                isConnected = true;
-                updateConnectionStatus(true);
-                updateStats();
-                visualizeResources(currentResource);
-                showToast('Connected to cluster successfully!', 'success');
-
-            } catch (error) {
-                console.error('Connection error:', error);
-                showToast('Failed to connect. Make sure kubectl proxy is running.', 'error');
-                updateConnectionStatus(false);
-            }
-
-            showLoading(false);
-        }
-
-        async function fetchAllResources(apiServer) {
-            const namespace = document.getElementById('namespaceSelect').value;
-            const nsPath = namespace ? `/namespaces/${namespace}` : '';
-
-            const endpoints = {
-                pods: `/api/v1${nsPath}/pods`,
-                services: `/api/v1${nsPath}/services`,
-                configmaps: `/api/v1${nsPath}/configmaps`,
-                secrets: `/api/v1${nsPath}/secrets`,
-                deployments: `/apis/apps/v1${nsPath}/deployments`,
-                nodes: '/api/v1/nodes',
-                persistentvolumes: '/api/v1/persistentvolumes',
-                namespaces: '/api/v1/namespaces'
-            };
-
-            for (const [resource, path] of Object.entries(endpoints)) {
-                try {
-                    const response = await fetch(`${apiServer}${path}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        clusterData[resource] = data.items || [];
-                    }
-                } catch (e) {
-                    console.warn(`Failed to fetch ${resource}:`, e);
-                }
-            }
-
-            updateResourceCounts();
-        }
-
-        function updateResourceCounts() {
-            document.getElementById('podCount').textContent = clusterData.pods.length;
-            document.getElementById('deploymentCount').textContent = clusterData.deployments.length;
-            document.getElementById('serviceCount').textContent = clusterData.services.length;
-            document.getElementById('configmapCount').textContent = clusterData.configmaps.length;
-            document.getElementById('secretCount').textContent = clusterData.secrets.length;
-            document.getElementById('namespaceCount').textContent = clusterData.namespaces.length;
-            document.getElementById('nodeCount').textContent = clusterData.nodes.length;
-            document.getElementById('pvCount').textContent = clusterData.persistentvolumes.length;
-        }
-
-        function updateStats() {
-            document.getElementById('totalPods').textContent = clusterData.pods.length;
-            document.getElementById('totalNamespaces').textContent = clusterData.namespaces.length;
-            document.getElementById('totalDeployments').textContent = clusterData.deployments.length;
-            document.getElementById('totalServices').textContent = clusterData.services.length;
-        }
-
-        function updateConnectionStatus(connected) {
-            const dot = document.getElementById('statusDot');
-            const text = document.getElementById('statusText');
-
-            if (connected) {
-                dot.classList.add('connected');
-                text.textContent = 'Connected';
-            } else {
-                dot.classList.remove('connected');
-                text.textContent = 'Disconnected';
-            }
-        }
-
-        function selectResource(resource) {
-            currentResource = resource;
-
-            // Update active state
-            document.querySelectorAll('.resource-item').forEach(item => {
-                item.classList.remove('active');
-                if (item.dataset.resource === resource) {
-                    item.classList.add('active');
-                }
-            });
-
-            // Update visualization
-            if (isConnected) {
-                visualizeResources(resource);
-            }
-
-            // Hide detail panel
-            document.getElementById('detailPanel').classList.remove('show');
-        }
-
+        
         function showResourceDetails(data) {
             const panel = document.getElementById('detailPanel');
             document.getElementById('detailName').textContent = data.name;
             document.getElementById('detailNamespace').textContent = data.namespace;
             document.getElementById('detailType').textContent = data.type.charAt(0).toUpperCase() + data.type.slice(1);
             document.getElementById('detailCreated').textContent = new Date(data.created).toLocaleString();
-
+            document.getElementById('detailAge').textContent = getAge(data.created);
+            
             const statusBadge = document.getElementById('detailStatus');
             statusBadge.textContent = data.status;
             statusBadge.className = 'status-badge';
-
-            if (data.status === 'Running' || data.status === 'Active' || data.status === 'True' || data.status === 'Available') {
+            
+            if (data.status === 'Running' || data.status === 'Active' || data.status === 'True' || data.status === 'Available' || data.status === 'valid' || data.status === 'Bound') {
                 statusBadge.classList.add('running');
             } else if (data.status === 'Pending') {
                 statusBadge.classList.add('pending');
             } else {
                 statusBadge.classList.add('error');
             }
-
+            
+            document.getElementById('logsTab').style.display = data.type === 'pods' ? 'block' : 'none';
             panel.classList.add('show');
+            updateFavoriteButton();
         }
-
-        function refreshVisualization() {
-            if (isConnected) {
-                const apiServer = document.getElementById('apiServer').value;
-                fetchAllResources(apiServer).then(() => {
-                    updateStats();
-                    visualizeResources(currentResource);
-                    showToast('Resources refreshed', 'success');
-                });
+        
+        function getAge(timestamp) {
+            const created = new Date(timestamp);
+            const now = new Date();
+            const diff = now - created;
+            
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (days > 0) return days + 'd ' + hours + 'h';
+            if (hours > 0) return hours + 'h ' + minutes + 'm';
+            return minutes + 'm';
+        }
+        
+        function openResourceModal(tab) {
+            if (!selectedResource) return;
+            
+            document.getElementById('modalResourceName').textContent = selectedResource.name;
+            document.getElementById('modalResourceType').textContent = selectedResource.type;
+            
+            populateYamlContent();
+            populateDetailsContent();
+            populateEventsContent();
+            populateLogsContent();
+            
+            document.getElementById('resourceModal').classList.add('show');
+            switchTab(tab || 'yaml');
+        }
+        
+        function closeModal() {
+            document.getElementById('resourceModal').classList.remove('show');
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.modal-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            const tabBtn = Array.from(document.querySelectorAll('.modal-tab')).find(btn => btn.textContent.toLowerCase() === tabName.toLowerCase());
+            if (tabBtn) tabBtn.classList.add('active');
+            const tabContent = document.getElementById('tab-' + tabName);
+            if (tabContent) tabContent.classList.add('active');
+        }
+        
+        function populateYamlContent() {
+            const yaml = convertToYaml(selectedResource.data);
+            const highlighted = highlightYaml(yaml);
+            document.getElementById('yamlContent').innerHTML = highlighted;
+        }
+        
+        function convertToYaml(obj, indent) {
+            indent = indent || 0;
+            let yaml = '';
+            const spaces = '  '.repeat(indent);
+            
+            for (const key in obj) {
+                if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                    const value = obj[key];
+                    if (value === null || value === undefined) {
+                        yaml += spaces + key + ': null\n';
+                    } else if (typeof value === 'object' && !Array.isArray(value)) {
+                        yaml += spaces + key + ':\n';
+                        yaml += convertToYaml(value, indent + 1);
+                    } else if (Array.isArray(value)) {
+                        yaml += spaces + key + ':\n';
+                        value.forEach(function(item) {
+                            if (typeof item === 'object') {
+                                yaml += spaces + '- \n';
+                                yaml += convertToYaml(item, indent + 2);
+                            } else {
+                                yaml += spaces + '- ' + item + '\n';
+                            }
+                        });
+                    } else if (typeof value === 'string') {
+                        yaml += spaces + key + ': "' + value + '"\n';
+                    } else if (typeof value === 'boolean') {
+                        yaml += spaces + key + ': ' + value + '\n';
+                    } else {
+                        yaml += spaces + key + ': ' + value + '\n';
+                    }
+                }
+            }
+            return yaml;
+        }
+        
+        function highlightYaml(yaml) {
+            return yaml
+                .replace(/^(\s*)([\w-]+):/gm, '$1<span class="yaml-key">$2</span>:')
+                .replace(/: "([^"]*)"$/gm, ': <span class="yaml-string">"$1"</span>')
+                .replace(/: (\d+)$/gm, ': <span class="yaml-number">$1</span>')
+                .replace(/: (true|false)$/gm, ': <span class="yaml-boolean">$1</span>')
+                .replace(/: (null)$/gm, ': <span class="yaml-null">$1</span>');
+        }
+        
+        function populateDetailsContent() {
+            const data = selectedResource.data;
+            const metadata = data.metadata || {};
+            const status = data.status || {};
+            
+            let html = '<div class="details-section"><h4>Metadata</h4><div class="details-grid">' +
+                '<div class="details-field"><div class="label">Name</div><div class="value">' + (metadata.name || 'N/A') + '</div></div>' +
+                '<div class="details-field"><div class="label">Namespace</div><div class="value">' + (metadata.namespace || 'N/A') + '</div></div>' +
+                '<div class="details-field"><div class="label">UID</div><div class="value">' + (metadata.uid || 'N/A') + '</div></div>' +
+                '<div class="details-field"><div class="label">Created</div><div class="value">' + (metadata.creationTimestamp ? new Date(metadata.creationTimestamp).toLocaleString() : 'N/A') + '</div></div>' +
+                '<div class="details-field"><div class="label">Resource Version</div><div class="value">' + (metadata.resourceVersion || 'N/A') + '</div></div>' +
+                '<div class="details-field"><div class="label">Generation</div><div class="value">' + (metadata.generation || 'N/A') + '</div></div>' +
+                '</div></div>';
+            
+            if (metadata.labels && Object.keys(metadata.labels).length > 0) {
+                html += '<div class="details-section"><h4>Labels</h4><div class="labels-list">';
+                for (const k in metadata.labels) {
+                    if (Object.prototype.hasOwnProperty.call(metadata.labels, k)) {
+                        html += '<span class="label-tag">' + k + ': ' + metadata.labels[k] + '</span>';
+                    }
+                }
+                html += '</div></div>';
+            }
+            
+            if (Object.keys(status).length > 0) {
+                html += '<div class="details-section"><h4>Status</h4><div class="details-grid">';
+                if (status.phase) html += '<div class="details-field"><div class="label">Phase</div><div class="value">' + status.phase + '</div></div>';
+                if (status.currentStatus) html += '<div class="details-field"><div class="label">Status</div><div class="value">' + status.currentStatus + '</div></div>';
+                if (status.replicas !== undefined) html += '<div class="details-field"><div class="label">Replicas</div><div class="value">' + status.replicas + '</div></div>';
+                if (status.availableReplicas !== undefined) html += '<div class="details-field"><div class="label">Available</div><div class="value">' + status.availableReplicas + '</div></div>';
+                if (status.readyReplicas !== undefined) html += '<div class="details-field"><div class="label">Ready</div><div class="value">' + status.readyReplicas + '</div></div>';
+                html += '</div></div>';
+            }
+            
+            document.getElementById('detailsContent').innerHTML = html;
+        }
+        
+        function populateEventsContent() {
+            const events = [
+                { type: 'normal', reason: 'Scheduled', message: 'Successfully assigned ' + selectedResource.namespace + '/' + selectedResource.name + ' to node-1', time: '2 minutes ago', count: 1 },
+                { type: 'normal', reason: 'Pulled', message: 'Container image already present on machine', time: '2 minutes ago', count: 1 },
+                { type: 'normal', reason: 'Created', message: 'Created container', time: '2 minutes ago', count: 1 },
+                { type: 'normal', reason: 'Started', message: 'Started container', time: '1 minute ago', count: 1 },
+                { type: 'warning', reason: 'Unhealthy', message: 'Readiness probe failed: connection refused', time: '30 seconds ago', count: 3 },
+            ];
+            
+            let html = '';
+            events.forEach(function(event) {
+                const icon = event.type === 'warning' ? '⚠️' : event.type === 'error' ? '❌' : 'ℹ️';
+                html += '<div class="event-item ' + event.type + '">' +
+                    '<div class="event-icon">' + icon + '</div>' +
+                    '<div class="event-content">' +
+                    '<div class="event-message">' + event.message + '</div>' +
+                    '<div class="event-meta">' + event.reason + ' • ' + event.time + ' • Count: ' + event.count + '</div>' +
+                    '</div></div>';
+            });
+            
+            document.getElementById('eventsContent').innerHTML = html;
+        }
+        
+        function populateLogsContent() {
+            const logs = [
+                { timestamp: '2025-12-05T14:30:01Z', level: 'info', message: 'Starting application...' },
+                { timestamp: '2025-12-05T14:30:02Z', level: 'info', message: 'Loading configuration from /etc/config/app.yaml' },
+                { timestamp: '2025-12-05T14:30:02Z', level: 'info', message: 'Connecting to database at postgres://db-service:5432' },
+                { timestamp: '2025-12-05T14:30:03Z', level: 'info', message: 'Database connection established' },
+                { timestamp: '2025-12-05T14:30:03Z', level: 'info', message: 'Starting HTTP server on port 8080' },
+                { timestamp: '2025-12-05T14:30:04Z', level: 'info', message: 'Server is ready to accept connections' },
+                { timestamp: '2025-12-05T14:31:15Z', level: 'info', message: 'GET /health - 200 OK (2ms)' },
+                { timestamp: '2025-12-05T14:32:01Z', level: 'warn', message: 'High memory usage detected: 85%' },
+                { timestamp: '2025-12-05T14:33:00Z', level: 'error', message: 'Failed to connect to external API: timeout after 30s' },
+                { timestamp: '2025-12-05T14:33:05Z', level: 'info', message: 'External API connection restored' },
+            ];
+            
+            let html = '';
+            logs.forEach(function(log) {
+                html += '<div class="log-line">' +
+                    '<span class="timestamp">' + log.timestamp + '</span> ' +
+                    '<span class="level-' + log.level + '">[' + log.level.toUpperCase() + ']</span> ' +
+                    '<span class="message">' + log.message + '</span></div>';
+            });
+            
+            document.getElementById('logsOutput').innerHTML = html;
+        }
+        
+        function copyYaml() {
+            const yaml = convertToYaml(selectedResource.data);
+            navigator.clipboard.writeText(yaml);
+            showToast('YAML copied to clipboard', 'success');
+        }
+        
+        function downloadYaml() {
+            const yaml = convertToYaml(selectedResource.data);
+            const blob = new Blob([yaml], { type: 'text/yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = selectedResource.name + '.yaml';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('YAML downloaded', 'success');
+        }
+        
+        function applyYaml() {
+            if (isDemoMode) {
+                showToast('Cannot apply changes in Demo Mode', 'warning');
+                return;
+            }
+            showToast('Applying changes...', 'info');
+            setTimeout(function() { showToast('Changes applied successfully!', 'success'); }, 1500);
+        }
+        
+        function refreshLogs() {
+            populateLogsContent();
+            showToast('Logs refreshed', 'info');
+        }
+        
+        function downloadLogs() {
+            const logs = '2025-12-05T14:30:01Z [INFO] Starting application...\n2025-12-05T14:30:02Z [INFO] Loading configuration...';
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = selectedResource.name + '-logs.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('Logs downloaded', 'success');
+        }
+        
+        function showDeleteConfirm() {
+            if (!selectedResource) return;
+            document.getElementById('deleteResourceName').textContent = selectedResource.name;
+            document.getElementById('deleteModal').classList.add('show');
+        }
+        
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('show');
+        }
+        
+        function deleteResource() {
+            closeDeleteModal();
+            if (isDemoMode) {
+                showToast('Demo Mode: ' + selectedResource.name + ' would be deleted', 'warning');
+            } else {
+                showToast('Deleting ' + selectedResource.name + '...', 'info');
+                setTimeout(function() {
+                    showToast(selectedResource.name + ' deleted successfully!', 'success');
+                    document.getElementById('detailPanel').classList.remove('show');
+                }, 1500);
             }
         }
-
-        function showLoading(show) {
-            const overlay = document.getElementById('loadingOverlay');
-            overlay.classList.toggle('show', show);
+        
+        async function connectToCluster() {
+            if (isDemoMode) return;
+            
+            const apiServer = document.getElementById('apiServer').value;
+            showLoading(true, 'Connecting to cluster...');
+            
+            try {
+                const response = await fetch(apiServer + '/api/v1/namespaces');
+                if (!response.ok) throw new Error('Connection failed');
+                
+                const data = await response.json();
+                clusterData.namespaces = data.items || [];
+                
+                const select = document.getElementById('namespaceSelect');
+                select.innerHTML = '<option value="">All Namespaces</option>';
+                clusterData.namespaces.forEach(function(ns) {
+                    const option = document.createElement('option');
+                    option.value = ns.metadata.name;
+                    option.textContent = ns.metadata.name;
+                    select.appendChild(option);
+                });
+                
+                await fetchAllResources(apiServer);
+                
+                isConnected = true;
+                document.getElementById('statusDot').className = 'status-dot connected';
+                document.getElementById('statusText').textContent = 'Connected';
+                document.getElementById('dataModeBadge').textContent = '🟢 Live Data';
+                
+                updateStats();
+                visualizeResources(currentResource);
+                showToast('Connected to cluster successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Connection error:', error);
+                showToast('Failed to connect. Make sure kubectl proxy is running.', 'error');
+                document.getElementById('statusDot').className = 'status-dot';
+                document.getElementById('statusText').textContent = 'Connection Failed';
+            }
+            
+            showLoading(false);
         }
-
-        function showToast(message, type = 'info') {
+        
+        async function fetchAllResources(apiServer) {
+            const namespace = document.getElementById('namespaceSelect').value;
+            const nsPath = namespace ? '/namespaces/' + namespace : '';
+            
+            const endpoints = {
+                pods: '/api/v1' + nsPath + '/pods',
+                services: '/api/v1' + nsPath + '/services',
+                configmaps: '/api/v1' + nsPath + '/configmaps',
+                secrets: '/api/v1' + nsPath + '/secrets',
+                serviceaccounts: '/api/v1' + nsPath + '/serviceaccounts',
+                persistentvolumeclaims: '/api/v1' + nsPath + '/persistentvolumeclaims',
+                deployments: '/apis/apps/v1' + nsPath + '/deployments',
+                replicasets: '/apis/apps/v1' + nsPath + '/replicasets',
+                statefulsets: '/apis/apps/v1' + nsPath + '/statefulsets',
+                daemonsets: '/apis/apps/v1' + nsPath + '/daemonsets',
+                jobs: '/apis/batch/v1' + nsPath + '/jobs',
+                cronjobs: '/apis/batch/v1' + nsPath + '/cronjobs',
+                ingresses: '/apis/networking.k8s.io/v1' + nsPath + '/ingresses',
+                networkpolicies: '/apis/networking.k8s.io/v1' + nsPath + '/networkpolicies',
+                httpproxies: '/apis/projectcontour.io/v1' + nsPath + '/httpproxies',
+                nodes: '/api/v1/nodes',
+                persistentvolumes: '/api/v1/persistentvolumes',
+                namespaces: '/api/v1/namespaces'
+            };
+            
+            for (const resource in endpoints) {
+                try {
+                    const response = await fetch(apiServer + endpoints[resource]);
+                    if (response.ok) {
+                        const data = await response.json();
+                        clusterData[resource] = data.items || [];
+                    }
+                } catch (e) {
+                    console.warn('Failed to fetch ' + resource + ':', e);
+                }
+            }
+            
+            updateResourceCounts();
+        }
+        
+        function updateResourceCounts() {
+            document.getElementById('podCount').textContent = (clusterData.pods || []).length;
+            document.getElementById('deploymentCount').textContent = (clusterData.deployments || []).length;
+            document.getElementById('replicasetCount').textContent = (clusterData.replicasets || []).length;
+            document.getElementById('statefulsetCount').textContent = (clusterData.statefulsets || []).length;
+            document.getElementById('daemonsetCount').textContent = (clusterData.daemonsets || []).length;
+            document.getElementById('jobCount').textContent = (clusterData.jobs || []).length;
+            document.getElementById('cronjobCount').textContent = (clusterData.cronjobs || []).length;
+            document.getElementById('serviceCount').textContent = (clusterData.services || []).length;
+            document.getElementById('ingressCount').textContent = (clusterData.ingresses || []).length;
+            document.getElementById('httpproxyCount').textContent = (clusterData.httpproxies || []).length;
+            document.getElementById('networkpolicyCount').textContent = (clusterData.networkpolicies || []).length;
+            document.getElementById('configmapCount').textContent = (clusterData.configmaps || []).length;
+            document.getElementById('secretCount').textContent = (clusterData.secrets || []).length;
+            document.getElementById('pvCount').textContent = (clusterData.persistentvolumes || []).length;
+            document.getElementById('pvcCount').textContent = (clusterData.persistentvolumeclaims || []).length;
+            document.getElementById('namespaceCount').textContent = (clusterData.namespaces || []).length;
+            document.getElementById('nodeCount').textContent = (clusterData.nodes || []).length;
+            document.getElementById('saCount').textContent = (clusterData.serviceaccounts || []).length;
+        }
+        
+        function updateStats() {
+            document.getElementById('totalPods').textContent = (clusterData.pods || []).length;
+            document.getElementById('totalNamespaces').textContent = (clusterData.namespaces || []).length;
+            document.getElementById('totalDeployments').textContent = (clusterData.deployments || []).length;
+            document.getElementById('totalServices').textContent = (clusterData.services || []).length;
+            document.getElementById('totalHttpProxies').textContent = (clusterData.httpproxies || []).length;
+        }
+        
+        function selectResource(resource) {
+            currentResource = resource;
+            
+            document.querySelectorAll('.resource-item').forEach(function(item) {
+                item.classList.remove('active');
+                if (item.dataset.resource === resource) {
+                    item.classList.add('active');
+                }
+            });
+            
+            visualizeResources(resource);
+            document.getElementById('detailPanel').classList.remove('show');
+            selectedResource = null;
+        }
+        
+        function refreshVisualization() {
+            if (!isDemoMode && isConnected) {
+                const apiServer = document.getElementById('apiServer').value;
+                showLoading(true, 'Refreshing resources...');
+                fetchAllResources(apiServer).then(function() {
+                    updateStats();
+                    visualizeResources(currentResource);
+                    showLoading(false);
+                    showToast('Resources refreshed', 'success');
+                });
+            } else {
+                visualizeResources(currentResource);
+                showToast('Visualization refreshed', 'info');
+            }
+        }
+        
+        function showLoading(show, text) {
+            document.getElementById('loadingText').textContent = text || 'Loading...';
+            document.getElementById('loadingOverlay').classList.toggle('show', show);
+        }
+        
+        function showToast(message, type) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
+            toast.className = 'toast ' + (type || 'info');
             toast.innerHTML = message;
             container.appendChild(toast);
-
-            setTimeout(() => toast.remove(), 4000);
+            setTimeout(function() { toast.remove(); }, 4000);
         }
-
-        // Demo mode with sample data
-        function loadDemoData() {
-            clusterData = {
-                pods: [
-                    { metadata: { name: 'nginx-pod-1', namespace: 'default', creationTimestamp: new Date().toISOString() }, status: { phase: 'Running' } },
-                    { metadata: { name: 'redis-pod-1', namespace: 'default', creationTimestamp: new Date().toISOString() }, status: { phase: 'Running' } },
-                    { metadata: { name: 'api-pod-1', namespace: 'production', creationTimestamp: new Date().toISOString() }, status: { phase: 'Running' } },
-                    { metadata: { name: 'worker-pod-1', namespace: 'production', creationTimestamp: new Date().toISOString() }, status: { phase: 'Pending' } },
-                    { metadata: { name: 'db-pod-1', namespace: 'database', creationTimestamp: new Date().toISOString() }, status: { phase: 'Running' } },
-                ],
-                deployments: [
-                    { metadata: { name: 'nginx-deployment', namespace: 'default', creationTimestamp: new Date().toISOString() }, status: { availableReplicas: 3 } },
-                    { metadata: { name: 'api-deployment', namespace: 'production', creationTimestamp: new Date().toISOString() }, status: { availableReplicas: 2 } },
-                ],
-                services: [
-                    { metadata: { name: 'nginx-service', namespace: 'default', creationTimestamp: new Date().toISOString() }, status: {} },
-                    { metadata: { name: 'api-service', namespace: 'production', creationTimestamp: new Date().toISOString() }, status: {} },
-                    { metadata: { name: 'db-service', namespace: 'database', creationTimestamp: new Date().toISOString() }, status: {} },
-                ],
-                configmaps: [
-                    { metadata: { name: 'app-config', namespace: 'default', creationTimestamp: new Date().toISOString() }, status: {} },
-                ],
-                secrets: [
-                    { metadata: { name: 'db-credentials', namespace: 'database', creationTimestamp: new Date().toISOString() }, status: {} },
-                ],
-                namespaces: [
-                    { metadata: { name: 'default', creationTimestamp: new Date().toISOString() }, status: { phase: 'Active' } },
-                    { metadata: { name: 'production', creationTimestamp: new Date().toISOString() }, status: { phase: 'Active' } },
-                    { metadata: { name: 'database', creationTimestamp: new Date().toISOString() }, status: { phase: 'Active' } },
-                    { metadata: { name: 'kube-system', creationTimestamp: new Date().toISOString() }, status: { phase: 'Active' } },
-                ],
-                nodes: [
-                    { metadata: { name: 'node-1', creationTimestamp: new Date().toISOString() }, status: { conditions: [{ type: 'Ready', status: 'True' }] } },
-                    { metadata: { name: 'node-2', creationTimestamp: new Date().toISOString() }, status: { conditions: [{ type: 'Ready', status: 'True' }] } },
-                ],
-                persistentvolumes: [
-                    { metadata: { name: 'pv-storage', creationTimestamp: new Date().toISOString() }, status: { phase: 'Bound' } },
-                ]
-            };
-
-            updateResourceCounts();
-            updateStats();
-            visualizeResources(currentResource);
-            showToast('Demo data loaded. Connect to see real cluster data.', 'info');
-        }
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            initDemoData();
             initThreeJS();
-            loadDemoData(); // Load demo data initially
+            loadDemoData();
+            loadFavorites();
         });
     </script>
 </body>
